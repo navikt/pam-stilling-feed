@@ -47,3 +47,6 @@ spec:
         cascadingDelete: false
   kafka:
     pool: {{kafka_pool}}
+  env:
+    - name: STILLING_INTERN_TOPIC
+      value: teampam.stilling-intern-1
