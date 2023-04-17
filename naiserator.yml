@@ -1,0 +1,46 @@
+apiVersion: "nais.io/v1alpha1"
+kind: "Application"
+metadata:
+  name: pam-stilling-feed
+  namespace: teampam
+  labels:
+    team: teampam
+spec:
+  image: {{ image }}
+  port: 8080
+  liveness:
+    path: /internal/isAlive
+    initialDelay: 40
+  readiness:
+    path: /internal/isReady
+    initialDelay: 40
+  replicas:
+    min: 2
+    max: 2
+    cpuThresholdPercentage: 50
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 2048Mi
+    requests:
+      cpu: 200m
+      memory: 512Mi
+  prometheus:
+    enabled: true
+    path: /internal/prometheus
+  ingresses:
+  {{#each ingress as |url|}}
+     - {{url}}
+  {{/each}}
+  gcp:
+    sqlInstances:
+      - name: pam-stilling-feed
+        type: POSTGRES_14
+        diskType: SSD
+        diskSize: 50
+        diskAutoresize: true
+        tier: db-custom-2-7680
+        databases:
+          - name: pamontologi
+            envVarPrefix: DB
+        cascadingDelete: false

@@ -1,0 +1,141 @@
+{
+  "id": 1570739,
+  "uuid": "10584075-1e5c-4a83-bf49-c80bcab83018",
+  "created": "2021-03-23T10:34:02.118827",
+  "createdBy": "pam-ad",
+  "updated": "2021-03-23T17:09:58.457413",
+  "updatedBy": "nss-admin",
+  "mediaList": [],
+  "contactList": [
+    {
+      "id": 701894,
+      "name": "abc",
+      "email": "abc@abc.no",
+      "phone": "1234567",
+      "role": null,
+      "title": "Styrer"
+    }
+  ],
+  "location": {
+    "address": null,
+    "postalCode": "7994",
+    "county": "TRØNDELAG",
+    "municipal": "LEKA",
+    "municipalCode": "5052",
+    "city": "LEKA",
+    "country": "NORGE",
+    "latitude": null,
+    "longitude": null
+  },
+  "locationList": [
+    {
+      "address": null,
+      "postalCode": "7994",
+      "county": "TRØNDELAG",
+      "municipal": "LEKA",
+      "municipalCode": "5052",
+      "city": "LEKA",
+      "country": "NORGE",
+      "latitude": null,
+      "longitude": null
+    }
+  ],
+  "properties": {
+    "extent": "Heltid",
+    "workhours": "[\"Dagtid\"]",
+    "employerhomepage": "https://www.abc.no",
+    "workday": "[\"Ukedager\"]",
+    "applicationdue": "2021-04-23",
+    "jobtitle": "Pedagogisk leder (barnehage/førskole)",
+    "positioncount": "1",
+    "engagementtype": "Fast",
+    "classification_styrk08_score": "1.0",
+    "_approvedby": "AUTO",
+    "starttime": "2021-06-01",
+    "employerdescription": "employerdescription here",
+    "adtext": "adtext here",
+    "applicationemail": "abc@abc.no",
+    "searchtags": "[{\"label\":\"Barnehagelærer\",\"score\":1.0},{\"label\":\"Barnepedagog\",\"score\":0.37848043},{\"label\":\"Fagarbeider barn\",\"score\":0.37817356},{\"label\":\"Preschool and Kindergarten Teacher\",\"score\":0.3779856}]",
+    "employer": "Leka kommune",
+    "ontologyJobtitle": "{\"konseptId\":266998,\"label\":\"Pedagogisk leder (barnehage/førskole)\",\"styrk08\":\"2342\"}",
+    "classification_input_source": "ontologyJobtitle",
+    "sector": "Offentlig"
+  },
+  "title": "Vi søker pedagogisk leder til",
+  "status": "ACTIVE",
+  "privacy": "SHOW_ALL",
+  "source": "Stillingsregistrering",
+  "medium": "Stillingsregistrering",
+  "reference": "10584075-1e5c-4a83-bf49-c80bcab83018",
+  "published": "2021-03-23T00:00:00",
+  "expires": "2021-04-23T00:00:00",
+  "employer": {
+    "id": 120325,
+    "uuid": "4b439b63-2b9f-457a-82cb-dd003bd83699",
+    "created": "2018-09-11T13:23:00.504",
+    "createdBy": "pam-ad",
+    "updated": "2021-03-26T01:31:08.128866",
+    "updatedBy": "pam-ad",
+    "mediaList": [],
+    "contactList": [],
+    "location": {
+      "address": "Leknesveien 0",
+      "postalCode": "7994",
+      "county": "TRØNDELAG",
+      "municipal": "LEKA",
+      "municipalCode": "5052",
+      "city": "LEKA",
+      "country": "NORGE",
+      "latitude": "65.09237973348661",
+      "longitude": "11.705093571591739"
+    },
+    "locationList": [
+      {
+        "address": "Leknesveien 67",
+        "postalCode": "7994",
+        "county": "TRØNDELAG",
+        "municipal": "LEKA",
+        "municipalCode": "5052",
+        "city": "LEKA",
+        "country": "NORGE",
+        "latitude": "65.09237973348661",
+        "longitude": "11.705093571591739"
+      }
+    ],
+    "properties": {
+      "nace2": "[{\"code\":\"84.110\",\"name\":\"Generell offentlig administrasjon\"}]"
+    },
+    "name": "SENTRALADMINISTRASJON",
+    "orgnr": "123456789",
+    "status": "ACTIVE",
+    "parentOrgnr": "123456780",
+    "publicName": "SENTRALADMINISTRASJON",
+    "deactivated": null,
+    "orgform": "BEDR",
+    "employees": 15
+  },
+  "categoryList": [
+    {
+      "id": 1601,
+      "code": "2342.07",
+      "categoryType": "STYRK08NAV",
+      "name": "Pedagogisk leder (førskolelærer)",
+      "description": null,
+      "parentId": 1594
+    }
+  ],
+  "administration": {
+    "id": 778643,
+    "status": "DONE",
+    "comments": "Auto approved - 2021-03-23T10:34:01.332673\n",
+    "reportee": "SOMEONE",
+    "remarks": [],
+    "navIdent": "A12345"
+  },
+  "publishedByAdmin": "2021-03-23T10:34:01.332732",
+  "businessName": "Kommune",
+  "firstPublished": true,
+  "deactivatedByExpiry": false,
+  "activationOnPublishingDate": false
+}
+
