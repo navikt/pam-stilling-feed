@@ -41,6 +41,8 @@ spec:
         diskAutoresize: true
         tier: db-custom-2-7680
         databases:
-          - name: pamontologi
+          - name: pamstillingfeed
             envVarPrefix: DB
         cascadingDelete: false
+  kafka:
+    pool: {{kafka_pool}}

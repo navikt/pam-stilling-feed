@@ -1,3 +1,4 @@
 {
   "ingress": ["https://pam-stilling-feed.intern.dev.nav.no/"],
+  "kafka_pool": "nav-dev"
 }
