@@ -81,7 +81,7 @@ class FeedServiceTest {
         while(side.next_id != null) {
             side = feedService!!.hentFeedHvis(side.next_id!!)!!
             side.items.forEach { adIds.remove(it.feed_entry.uuid) }
-            println(side)
+            //println(side)
         }
         Assertions.assertThat(adIds).isEmpty()
     }

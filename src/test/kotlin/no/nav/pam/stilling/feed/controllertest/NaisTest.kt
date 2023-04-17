@@ -22,7 +22,7 @@ class NaisTest {
     @Test
     fun isAlive() {
         val request = HttpRequest.newBuilder()
-            .uri(URI("$lokalUrlBase/isAlive"))
+            .uri(URI("$lokalUrlBase/internal/isAlive"))
             .GET()
             .build()
 

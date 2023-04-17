@@ -1,9 +1,6 @@
 package no.nav.pam.stilling.feed.controllertest
 
-import io.micrometer.prometheus.PrometheusConfig
-import io.micrometer.prometheus.PrometheusMeterRegistry
 import no.nav.pam.stilling.feed.*
-import no.nav.pam.stilling.feed.config.DatabaseConfig
 import no.nav.pam.stilling.feed.config.TxTemplate
 import no.nav.pam.stilling.feed.dto.AdDTO
 import no.nav.pam.stilling.feed.dto.Feed
@@ -11,6 +8,11 @@ import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpHeaders
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
 import java.util.*
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -50,14 +52,29 @@ class FeedControllerTest {
 
         Assertions.assertThat(adIds.size).isEqualTo(Feed.pageSize*3 + 1)
 
-        var førsteSide = feedService!!.hentFørsteSide()
-        var side = feedService!!.hentFeedHvis(førsteSide!!.id)!!
-        side.items.forEach { adIds.remove(it.feed_entry.uuid) }
-        while(side.next_id != null) {
-            side = feedService!!.hentFeedHvis(side.next_id!!)!!
-            side.items.forEach { adIds.remove(it.feed_entry.uuid) }
-            println(side)
+        var feedPageResponse = getFeedPage()
+        feedPageResponse.first.items.forEach { adIds.remove(it.feed_entry.uuid) }
+
+        while(feedPageResponse.first.next_id != null) {
+            feedPageResponse = getFeedPage(feedPageResponse.first.next_id.toString())
+            feedPageResponse.first.items.forEach { adIds.remove(it.feed_entry.uuid) }
         }
         Assertions.assertThat(adIds).isEmpty()
+
+        // TODO legg på test på last modified og etag
+    }
+
+    private fun getFeedPage(pageId: String = "", etag: String? = null, lastModified: String? = null) : Pair<Feed, HttpHeaders> {
+        val request = HttpRequest.newBuilder()
+            .uri(URI("$lokalUrlBase/api/v1/feed/$pageId"))
+            .GET()
+            .build()
+
+        val response = HttpClient.newBuilder()
+            .build()
+            .send(request, HttpResponse.BodyHandlers.ofString())
+
+        val feed = objectMapper.readValue(response.body(), Feed::class.java)
+        return Pair(feed, response.headers())
     }
 }
