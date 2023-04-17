@@ -37,6 +37,7 @@ spec:
       - name: pam-stilling-feed
         type: POSTGRES_14
         diskType: SSD
+        highAvailability: true
         diskSize: 50
         diskAutoresize: true
         tier: db-custom-2-7680
