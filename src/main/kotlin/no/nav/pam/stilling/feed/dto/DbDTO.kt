@@ -1,5 +1,7 @@
 package no.nav.pam.stilling.feed.dto
 
+import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.annotation.JsonProperty
 import java.sql.ResultSet
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -7,13 +9,15 @@ import java.util.UUID
 
 data class FeedItem(val uuid: UUID,
                     val json: String,
-                    val sistEndret: ZonedDateTime) {
+                    val sistEndret: ZonedDateTime,
+                    val status: String) {
     companion object {
         fun fraDatabase(rs: ResultSet, prefix: String = "") = FeedItem(
             uuid = rs.getObject("${prefix}id") as UUID,
             json = rs.getString("${prefix}json"),
-            sistEndret = rs.getTimestamp("${prefix}sist_endret").toInstant().atZone(ZoneId.of("Europe/Oslo"))
-        )
+            sistEndret = rs.getTimestamp("${prefix}sist_endret").toInstant().atZone(ZoneId.of("Europe/Oslo")),
+            status = rs.getString("${prefix}status"),
+            )
     }
 }
 

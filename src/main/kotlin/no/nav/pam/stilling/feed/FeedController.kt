@@ -3,6 +3,7 @@ package no.nav.pam.stilling.feed
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.javalin.Javalin
 import io.javalin.http.Context
+import no.nav.pam.stilling.feed.dto.FeedEntryContent
 import org.slf4j.LoggerFactory
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -52,7 +53,7 @@ class FeedController(private val feedService: FeedService,  private val objectMa
         if (feed == null) {
             ctx.status(404)
         } else {
-            ctx.json(feed)
+            ctx.json(FeedEntryContent.fraFeedItem(feed, objectMapper))
         }
     }
 

@@ -37,16 +37,18 @@ class FeedService(private val feedRepository: FeedRepository,
         return txTemplate.doInTransaction(txContext) { ctx ->
             val feedAd = mapAd(ad, "localhost")
             val active = ad.status == "ACTIVE"
+            val statusDescription = if (active) "ACTIVE" else "INACTIVE"
             val feedJson = if (active) objectMapper.writeValueAsString(feedAd) else ""
 
             val feedItem = FeedItem(uuid = UUID.fromString(ad.uuid),
                 json = feedJson,
-                sistEndret = ad.updated.atZone(ZoneId.of("Europe/Oslo")))
+                sistEndret = ad.updated.atZone(ZoneId.of("Europe/Oslo")),
+                status = statusDescription)
             feedRepository.lagreFeedItem(feedItem, ctx)
 
             val feedPageItem = FeedPageItem(
                 id = UUID.randomUUID(),
-                status = if (active) "ACTIVE" else "INACTIVE",
+                status = statusDescription,
                 title = ad.title ?: "?",
                 municipal = ad.location?.municipal ?: "?",
                 businessName = ad.businessName ?: "?",

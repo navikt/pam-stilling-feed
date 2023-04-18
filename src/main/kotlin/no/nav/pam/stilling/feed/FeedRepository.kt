@@ -18,11 +18,12 @@ class FeedRepository(private val txTemplate: TxTemplate) {
     fun lagreFeedItem(feedItem: FeedItem, txContext : TxContext? = null): Int? {
         return txTemplate.doInTransaction(txContext) { ctx ->
             val sql = """
-                insert into feed_item(id, json, sist_endret) 
-                values(?, ?, ?)
+                insert into feed_item(id, json, sist_endret, status) 
+                values(?, ?, ?, ?)
                 on conflict(id) do update
                 set json = EXCLUDED.json,
-                    sist_endret = EXCLUDED.sist_endret
+                    sist_endret = EXCLUDED.sist_endret,
+                    status = EXCLUDED.status
             """.trimIndent()
             val c = ctx.connection()
             var numRows = 0
@@ -30,6 +31,7 @@ class FeedRepository(private val txTemplate: TxTemplate) {
                 this.setObject(1, feedItem.uuid)
                 this.setString(2, feedItem.json)
                 this.setTimestamp(3, Timestamp(feedItem.sistEndret.toInstant().toEpochMilli()))
+                this.setString(4, feedItem.status)
             }.use { statement ->
                 numRows = statement.executeUpdate()
             }
@@ -40,7 +42,7 @@ class FeedRepository(private val txTemplate: TxTemplate) {
     fun hentFeedItem(id: UUID, txContext : TxContext? = null): FeedItem? {
         return txTemplate.doInTransaction(txContext) { ctx ->
             val sql = """
-                select id, json, sist_endret
+                select id, json, sist_endret, status
                 from feed_item
                 where id = ?
             """.trimIndent()

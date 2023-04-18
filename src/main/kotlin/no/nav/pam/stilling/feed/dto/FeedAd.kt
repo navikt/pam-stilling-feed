@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.databind.ObjectMapper
+import java.sql.ResultSet
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -59,6 +61,10 @@ private fun toZonedDateTime(ldt: LocalDateTime?, default: LocalDateTime? = null)
 }
 
 fun mapAd(source: AdDTO, host: String?): FeedAd {
+    // TODO Burde vi her ha en link til arbeidsplassen?
+    // https://arbeidsplassen.nav.no/stillinger/stilling/
+    // eller
+    // https://arbeidsplassen.dev.nav.no/stillinger/stilling/
     val link = "https://$host/stillinger/stilling/${source.uuid}"
 
     return FeedAd(
@@ -170,3 +176,19 @@ data class FeedEntry(val uuid: String,
                      val businessName: String,
                      val municipal: String,
                      val sistEndret: ZonedDateTime)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class FeedEntryContent(val uuid: UUID,
+                    @JsonProperty("ad_content")
+                    val json: FeedAd?,
+                    val sistEndret: ZonedDateTime,
+                    val status: String) {
+    companion object {
+        fun fraFeedItem(item: FeedItem, objectMapper: ObjectMapper) = FeedEntryContent(
+            uuid = item.uuid,
+            json = if (item.json.isNullOrBlank()) null else objectMapper.readValue(item.json, FeedAd::class.java),
+            sistEndret = item.sistEndret,
+            status = item.status,
+        )
+    }
+}

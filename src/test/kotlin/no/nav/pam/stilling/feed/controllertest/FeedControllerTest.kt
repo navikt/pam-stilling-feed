@@ -4,6 +4,7 @@ import no.nav.pam.stilling.feed.*
 import no.nav.pam.stilling.feed.config.TxTemplate
 import no.nav.pam.stilling.feed.dto.AdDTO
 import no.nav.pam.stilling.feed.dto.Feed
+import no.nav.pam.stilling.feed.dto.FeedEntryContent
 import no.nav.pam.stilling.feed.dto.FeedItem
 import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.BeforeAll
@@ -83,7 +84,7 @@ class FeedControllerTest {
         val feed = objectMapper.readValue(response.body(), Feed::class.java)
         return Pair(feed, response.headers())
     }
-    private fun getFeedItem(itemId: String = "", etag: String? = null, lastModified: String? = null) : Pair<FeedItem, HttpHeaders> {
+    private fun getFeedItem(itemId: String = "", etag: String? = null, lastModified: String? = null) : Pair<FeedEntryContent, HttpHeaders> {
         val request = HttpRequest.newBuilder()
             .uri(URI("$lokalUrlBase/api/v1/feedentry/$itemId"))
             .GET()
@@ -93,7 +94,7 @@ class FeedControllerTest {
             .build()
             .send(request, HttpResponse.BodyHandlers.ofString())
 
-        val feed = objectMapper.readValue(response.body(), FeedItem::class.java)
+        val feed = objectMapper.readValue(response.body(), FeedEntryContent::class.java)
         return Pair(feed, response.headers())
     }
 }
