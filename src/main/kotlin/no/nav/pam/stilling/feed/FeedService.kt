@@ -27,10 +27,10 @@ class FeedService(private val feedRepository: FeedRepository,
 
     fun lagreNyStillingsAnnonse(ad: AdDTO, txContext: TxContext? = null) : Pair<FeedItem, FeedPageItem>? {
         if (ad.source == "FINN") {
-            LOG.info("Ignorerer annonse $ad.uuid siden det er en finn annonse")
+            LOG.info("Ignorerer annonse ${ad.uuid} siden det er en finn annonse")
             return null
         } else if (ad.publishedByAdmin == null) {
-            LOG.info("Ignorerer annonse $ad.uuid siden den ikke er publisert ennå")
+            LOG.info("Ignorerer annonse ${ad.uuid} siden den ikke er publisert ennå")
             return null
         }
 
