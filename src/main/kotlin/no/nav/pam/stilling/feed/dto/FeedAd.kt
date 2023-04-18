@@ -124,7 +124,7 @@ data class Feed(val version: String = "1.0",
                 val items: MutableList<FeedLine> = mutableListOf()
 ) {
     companion object {
-        val pageSize: Int = 5
+        val pageSize: Int = 100
         val emptyFeed = Feed(
             next_url = "",
             lastModified = ZonedDateTime.now(),
@@ -148,7 +148,7 @@ data class FeedLine(val id: String,
         fun fraFeedPageItem(feedPageItem: FeedPageItem, urlPrefix: String? = "/api/v1") =
             FeedLine(
                 id = feedPageItem.feedItemId.toString(),
-                url = "$urlPrefix/feed/${feedPageItem.feedItemId.toString()}",
+                url = "$urlPrefix/feedentry/${feedPageItem.feedItemId.toString()}",
                 title = feedPageItem.title,
                 date_modified = feedPageItem.lastModified,
                 feed_entry = FeedEntry(
