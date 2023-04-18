@@ -8,6 +8,7 @@ import org.testcontainers.containers.KafkaContainer
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
 
+
 fun main() {
     startLocalApplication()
 }
@@ -25,16 +26,15 @@ val lokalPostgres: PostgreSQLContainer<*>
         return postgres
     }
 
-/*
+
 val lokalKafka: KafkaContainer
     get() {
         val kafka = KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.3.2"))
             .withKraft()
-
         kafka.start()
         return kafka
     }
-*/
+
 val dataSource = HikariConfig().apply {
     jdbcUrl = lokalPostgres.jdbcUrl
     minimumIdle = 1
@@ -46,19 +46,28 @@ val dataSource = HikariConfig().apply {
     validate()
 }.let(::HikariDataSource)
 
-private val env = emptyMap<String, String>()
+private val env = mutableMapOf(
+    "STILLING_INTERN_TOPIC" to "teampam.stilling-intern-1",
+    "STILLING_INTERN_GROUP_ID" to "StillingFeed1",
+    "security.protocol" to "PLAINTEXT",
+    "KAFKA_BROKERS" to lokalKafka.bootstrapServers
+)
+fun getLokalEnv() = env
+
 val prometheusRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
 
 private var harStartetApplikasjonen = false
+private var listenerThread : Thread? = null
 
-fun startLocalApplication() {
+fun startLocalApplication(): Thread {
     if (!harStartetApplikasjonen) {
 
-        startApp(
+        listenerThread = startApp(
             dataSource,
             prometheusRegistry,
             env
         )
         harStartetApplikasjonen = true
     }
+    return listenerThread!!
 }

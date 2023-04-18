@@ -50,3 +50,6 @@ spec:
   env:
     - name: STILLING_INTERN_TOPIC
       value: teampam.stilling-intern-1
+    - name: STILLING_INTERN_GROUP_ID
+      value: StillingFeed1
+

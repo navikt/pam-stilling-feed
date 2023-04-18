@@ -11,12 +11,12 @@ import io.javalin.json.JavalinJackson
 import io.javalin.micrometer.MicrometerPlugin
 import io.micrometer.prometheus.PrometheusConfig
 import io.micrometer.prometheus.PrometheusMeterRegistry
-import io.prometheus.client.exporter.common.TextFormat
 import no.nav.pam.stilling.feed.config.DatabaseConfig
 import no.nav.pam.stilling.feed.config.TxTemplate
 import org.flywaydb.core.Flyway
 import org.slf4j.LoggerFactory
 import net.logstash.logback.argument.StructuredArguments.kv
+import no.nav.pam.stilling.feed.config.KafkaConfig
 import org.slf4j.Logger
 import java.util.*
 import javax.sql.DataSource
@@ -36,27 +36,26 @@ val objectMapper: ObjectMapper = jacksonObjectMapper().registerModule(JavaTimeMo
 
 fun startApp(dataSource: DataSource,
              prometheusRegistry : PrometheusMeterRegistry,
-             env: Map<String, String>) {
+             env: Map<String, String>) : Thread {
     val txTemplate = TxTemplate(dataSource)
     kjørFlywayMigreringer(dataSource)
 
-
+    val healthService = HealthService()
+    val kafkaConsumer = KafkaConfig(env).kafkaConsumer()
     val feedRepository = FeedRepository(txTemplate)
     val feedService = FeedService(feedRepository, txTemplate, objectMapper)
     val feedController = FeedController(feedService, objectMapper)
+    val naisController = NaisController(healthService, prometheusRegistry)
+    val kafkaListener = KafkaStillingListener(kafkaConsumer, feedService, objectMapper, txTemplate, healthService)
+
     val javalin = startJavalin(port = 8080,
         jsonMapper = JavalinJackson(objectMapper),
         meterRegistry = prometheusRegistry
     )
 
-    javalin.get("/internal/isAlive", {it.status(200)})
-    javalin.get("/internal/isReady", {it.status(200)})
-    javalin.get(
-        "/internal/prometheus",
-        { it.contentType(TextFormat.CONTENT_TYPE_004).result(prometheusRegistry.scrape()) }
-    )
-
+    naisController.setupRoutes(javalin)
     feedController.setupRoutes(javalin)
+    return kafkaListener.startListener()
 }
 
 

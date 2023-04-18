@@ -25,10 +25,19 @@ class FeedService(private val feedRepository: FeedRepository,
         }!!
     }
 
-    fun lagreNyStillingsAnnonse(ad: AdDTO, txContext: TxContext? = null) : Pair<FeedItem, FeedPageItem> {
+    fun lagreNyStillingsAnnonse(ad: AdDTO, txContext: TxContext? = null) : Pair<FeedItem, FeedPageItem>? {
+        if (ad.source == "FINN") {
+            LOG.info("Ignorerer annonse $ad.uuid siden det er en finn annonse")
+            return null
+        } else if (ad.publishedByAdmin == null) {
+            LOG.info("Ignorerer annonse $ad.uuid siden den ikke er publisert ennå")
+            return null
+        }
+
         return txTemplate.doInTransaction(txContext) { ctx ->
             val feedAd = mapAd(ad, "localhost")
-            val feedJson = objectMapper.writeValueAsString(feedAd)
+            val active = ad.status == "ACTIVE"
+            val feedJson = if (active) objectMapper.writeValueAsString(feedAd) else ""
 
             val feedItem = FeedItem(uuid = UUID.fromString(ad.uuid),
                 json = feedJson,
@@ -37,7 +46,7 @@ class FeedService(private val feedRepository: FeedRepository,
 
             val feedPageItem = FeedPageItem(
                 id = UUID.randomUUID(),
-                status = ad.status ?: "ukjent", // dette bør kun være publisert/utgått
+                status = if (active) "ACTIVE" else "INACTIVE",
                 title = ad.title ?: "?",
                 municipal = ad.location?.municipal ?: "?",
                 businessName = ad.businessName ?: "?",
@@ -47,6 +56,21 @@ class FeedService(private val feedRepository: FeedRepository,
             val lagretPageItem = feedRepository.lagreFeedPageItem(feedPageItem, ctx)
 
             return@doInTransaction Pair(feedItem, lagretPageItem)
+        }!!
+    }
+    fun lagreNyeStillingsAnnonserFraJson(jsonAnnonser: List<String>, txContext: TxContext? = null) : List<Pair<FeedItem, FeedPageItem>> {
+        return txTemplate.doInTransaction(txContext) { ctx ->
+            // TODO Hvis vi trenger å optimalisere så er dette en åpenbar kandidat for å batche jdbc-kall
+            val ads = jsonAnnonser.mapNotNull { objectMapper.readValue(it, AdDTO::class.java) }
+            return@doInTransaction lagreNyeStillingsAnnonser(ads, ctx)
+        }!!
+    }
+    fun lagreNyeStillingsAnnonser(ads: List<AdDTO>, txContext: TxContext? = null) : List<Pair<FeedItem, FeedPageItem>> {
+        return txTemplate.doInTransaction(txContext) { ctx ->
+            val items = ads.map { ad ->
+                lagreNyStillingsAnnonse(ad, txContext)
+            }.filterNotNull().toList()
+            return@doInTransaction items
         }!!
     }
 

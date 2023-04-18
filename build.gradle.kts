@@ -42,7 +42,6 @@ dependencies {
 
     implementation("org.apache.kafka:kafka-clients:3.4.0")
 
-
     testImplementation(kotlin("test"))
     testImplementation("org.assertj:assertj-core:3.24.2")
     testImplementation("org.testcontainers:testcontainers:1.18.0")

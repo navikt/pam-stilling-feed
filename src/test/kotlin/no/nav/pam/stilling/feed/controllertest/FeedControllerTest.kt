@@ -4,6 +4,7 @@ import no.nav.pam.stilling.feed.*
 import no.nav.pam.stilling.feed.config.TxTemplate
 import no.nav.pam.stilling.feed.dto.AdDTO
 import no.nav.pam.stilling.feed.dto.Feed
+import no.nav.pam.stilling.feed.dto.FeedItem
 import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -42,10 +43,11 @@ class FeedControllerTest {
     fun skalLagreOgHenteFeedSider() {
         val adIds = mutableListOf<String>()
         for (i in 1..(Feed.pageSize*3)+1) {
-            val ad = objectMapper.readValue(javaClass.getResourceAsStream("/ad_dto.json"), AdDTO::class.java)
+            var ad = objectMapper.readValue(javaClass.getResourceAsStream("/ad_dto.json"), AdDTO::class.java)
                 .copy(uuid = UUID.randomUUID().toString(),
                     title =  "Annonse #$i"
                 )
+            if (i % 7 == 0) ad = ad.copy(status = "INACTIVE")
             adIds.add(ad.uuid)
             val adItem = feedService!!.lagreNyStillingsAnnonse(ad)
         }
@@ -57,6 +59,10 @@ class FeedControllerTest {
 
         while(feedPageResponse.first.next_id != null) {
             feedPageResponse = getFeedPage(feedPageResponse.first.next_id.toString())
+            feedPageResponse.first.items.forEach { f ->
+                val feedItem = getFeedItem(f.feed_entry.uuid)
+                //println(feedItem.first.json)
+            }
             feedPageResponse.first.items.forEach { adIds.remove(it.feed_entry.uuid) }
         }
         Assertions.assertThat(adIds).isEmpty()
@@ -75,6 +81,19 @@ class FeedControllerTest {
             .send(request, HttpResponse.BodyHandlers.ofString())
 
         val feed = objectMapper.readValue(response.body(), Feed::class.java)
+        return Pair(feed, response.headers())
+    }
+    private fun getFeedItem(itemId: String = "", etag: String? = null, lastModified: String? = null) : Pair<FeedItem, HttpHeaders> {
+        val request = HttpRequest.newBuilder()
+            .uri(URI("$lokalUrlBase/api/v1/feedentry/$itemId"))
+            .GET()
+            .build()
+
+        val response = HttpClient.newBuilder()
+            .build()
+            .send(request, HttpResponse.BodyHandlers.ofString())
+
+        val feed = objectMapper.readValue(response.body(), FeedItem::class.java)
         return Pair(feed, response.headers())
     }
 }
