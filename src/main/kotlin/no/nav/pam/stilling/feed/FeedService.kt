@@ -84,7 +84,11 @@ class FeedService(private val feedRepository: FeedRepository,
         }
     }
 
-    fun hentFeedHvis(id: UUID, etag: String? = null, sistEndret: ZonedDateTime? = null, txContext : TxContext? = null): Feed? {
+    fun hentFeedHvis(id: UUID,
+                     etag: String? = null,
+                     sistEndret: ZonedDateTime? = null,
+                     pageSize: Int = Feed.defaultPageSize,
+                     txContext : TxContext? = null): Feed? {
         return txTemplate.doInTransaction(txContext) { ctx ->
             val førsteItem = feedRepository.hentFeedPageItem(id)
             førsteItem?.let { f ->

@@ -50,6 +50,7 @@ private val env = mutableMapOf(
     "STILLING_INTERN_TOPIC" to "teampam.stilling-intern-1",
     "STILLING_INTERN_GROUP_ID" to "StillingFeed1",
     "security.protocol" to "PLAINTEXT",
+    "PRIVATE_SECRET" to "SuperHemmeligNøkkel",
     "KAFKA_BROKERS" to lokalKafka.bootstrapServers
 )
 fun getLokalEnv() = env

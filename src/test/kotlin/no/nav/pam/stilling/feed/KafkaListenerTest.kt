@@ -60,7 +60,7 @@ class KafkaListenerTest {
     }
 
     private fun publiserTilKafka() {
-        for (i in 1..(Feed.pageSize * 3) + 1) {
+        for (i in 1..(Feed.defaultPageSize * 3) + 1) {
             val ad = objectMapper.readValue(javaClass.getResourceAsStream("/ad_dto.json"), AdDTO::class.java)
                 .copy(
                     uuid = UUID.randomUUID().toString(),
@@ -75,7 +75,7 @@ class KafkaListenerTest {
     @Disabled
     fun skalKonsumereKafkameldinger() {
         publiserTilKafka()
-        Assertions.assertThat(adIds.size).isEqualTo(Feed.pageSize * 3 + 1)
+        Assertions.assertThat(adIds.size).isEqualTo(Feed.defaultPageSize * 3 + 1)
 
         admin!!.describeTopics(listOf(topic)).allTopicNames().get().forEach{println(it)}
         admin!!.listConsumerGroups().all().get().forEach{println(it)}

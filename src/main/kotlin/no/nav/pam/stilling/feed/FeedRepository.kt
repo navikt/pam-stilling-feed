@@ -106,7 +106,7 @@ class FeedRepository(private val txTemplate: TxTemplate) {
         }
     }
 
-    fun hentFeedPageItemsNyereEnn(seqNo: Long, antall: Int = Feed.pageSize, txContext : TxContext? = null): MutableList<FeedPageItem> {
+    fun hentFeedPageItemsNyereEnn(seqNo: Long, antall: Int = Feed.defaultPageSize, txContext : TxContext? = null): MutableList<FeedPageItem> {
         return txTemplate.doInTransaction(txContext) { ctx ->
             val feedPageItems = mutableListOf<FeedPageItem>()
             // NB: Dette garanterer ikke at vi har monotont stigende sist_endret...

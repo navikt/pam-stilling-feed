@@ -17,6 +17,7 @@ import org.flywaydb.core.Flyway
 import org.slf4j.LoggerFactory
 import net.logstash.logback.argument.StructuredArguments.kv
 import no.nav.pam.stilling.feed.config.KafkaConfig
+import no.nav.pam.stilling.feed.config.variable
 import org.slf4j.Logger
 import java.util.*
 import javax.sql.DataSource
@@ -40,6 +41,7 @@ fun startApp(dataSource: DataSource,
     val txTemplate = TxTemplate(dataSource)
     kjørFlywayMigreringer(dataSource)
 
+    val auth = AuthController(issuer = "nav-no", audience = "feed-api-v2", secret = env.variable("PRIVATE_SECRET"))
     val healthService = HealthService()
     val kafkaConsumer = KafkaConfig(env).kafkaConsumer()
     val feedRepository = FeedRepository(txTemplate)
@@ -54,7 +56,9 @@ fun startApp(dataSource: DataSource,
     )
 
     naisController.setupRoutes(javalin)
+    auth.setupRoutes(javalin)
     feedController.setupRoutes(javalin)
+
     return kafkaListener.startListener()
 }
 

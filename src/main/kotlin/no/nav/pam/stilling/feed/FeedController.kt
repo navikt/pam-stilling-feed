@@ -12,29 +12,37 @@ import java.util.*
 class FeedController(private val feedService: FeedService,  private val objectMapper: ObjectMapper) {
     companion object {
         private val LOG = LoggerFactory.getLogger(FeedRepository::class.java)
+        const val defaultOutboundPageSize: Int = 1000
     }
 
     fun setupRoutes(javalin: Javalin) {
-        javalin.get("/api/v1/feed/{feed_page_id}") { ctx -> hentFeed(ctx, ctx.pathParam("feed_page_id")) }
-        javalin.get("/api/v1/feed") { ctx -> hentFeed(ctx) }
+        javalin.get("/api/v1/feed/{feed_page_id}") { ctx ->
+            hentFeed(ctx, ctx.pathParam("feed_page_id"), toInt(ctx.queryParam("pageSize"), defaultOutboundPageSize)) }
+        javalin.get("/api/v1/feed") { ctx ->
+            hentFeed(ctx, toInt(ctx.queryParam("pageSize"), defaultOutboundPageSize)) }
         javalin.get("/api/v1/feedentry/{entry_id}") { ctx -> hentFeedItem(ctx, ctx.pathParam("entry_id")) }
     }
 
-    fun hentFeed(ctx: Context) {
+    fun hentFeed(ctx: Context, pageSize: Int = defaultOutboundPageSize) {
         val sisteSide = ctx.queryParam("last")
         val feedPageItem = if (sisteSide != null) feedService.hentSisteSide() else feedService.hentFørsteSide()
         if (feedPageItem == null)
             ctx.status(404)
         else
-            hentFeed(ctx, feedPageItem.id.toString())
+            hentFeed(ctx, feedPageItem.id.toString(), pageSize)
     }
 
-    fun hentFeed(ctx: Context, feedPageId: String) {
+    private fun toInt(s: String?, defaultValue : Int):Int =
+        s?.toIntOrNull() ?: defaultValue
+
+    fun hentFeed(ctx: Context, feedPageId: String, pageSize: Int = defaultOutboundPageSize) {
         val etag = ctx.header("If-None-Match")
         val ifModifiedSinceStr = ctx.header("If-Modified-Since")
 
         val feed = feedService.hentFeedHvis(id = UUID.fromString(feedPageId), etag = etag,
-            sistEndret = strToZonedDateTime(ifModifiedSinceStr))
+            sistEndret = strToZonedDateTime(ifModifiedSinceStr),
+            pageSize = pageSize
+        )
 
         if (feed == null) {
             ctx.status(404)

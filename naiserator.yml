@@ -52,4 +52,5 @@ spec:
       value: teampam.stilling-intern-1
     - name: STILLING_INTERN_GROUP_ID
       value: StillingFeed2
-
+    - name: PRIVATE_SECRET
+      value: SuperHemmeligNøkkel

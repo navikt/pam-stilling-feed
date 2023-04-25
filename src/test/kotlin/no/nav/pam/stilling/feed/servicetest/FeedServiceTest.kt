@@ -4,12 +4,10 @@ import no.nav.pam.stilling.feed.*
 import no.nav.pam.stilling.feed.config.TxTemplate
 import no.nav.pam.stilling.feed.dto.AdDTO
 import no.nav.pam.stilling.feed.dto.Feed
-import no.nav.pam.stilling.feed.dto.FeedPageItem
 import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
-import java.time.ZonedDateTime
 import java.util.*
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -36,7 +34,7 @@ class FeedServiceTest {
     private fun antallSider(): Int = dataSource.connection.use {
         val rs = it.prepareStatement("select count(*) from feed_page_item").executeQuery()
         rs.next()
-        rs.getInt(1) % Feed.pageSize
+        rs.getInt(1) % Feed.defaultPageSize
     }
 
     @Test
@@ -64,7 +62,7 @@ class FeedServiceTest {
     @Test
     fun skalLagreFeedSider() {
         val adIds = mutableListOf<String>()
-        for (i in 1..(Feed.pageSize*3)+1) {
+        for (i in 1..(Feed.defaultPageSize*3)+1) {
             val ad = objectMapper.readValue(javaClass.getResourceAsStream("/ad_dto.json"), AdDTO::class.java)
                 .copy(uuid = UUID.randomUUID().toString(),
                     title =  "Annonse #$i"
@@ -73,7 +71,7 @@ class FeedServiceTest {
             val adItem = feedService!!.lagreNyStillingsAnnonse(ad)
         }
 
-        Assertions.assertThat(adIds.size).isEqualTo(Feed.pageSize*3 + 1)
+        Assertions.assertThat(adIds.size).isEqualTo(Feed.defaultPageSize*3 + 1)
 
         var førsteSide = feedService!!.hentFørsteSide()
         var side = feedService!!.hentFeedHvis(førsteSide!!.id)!!

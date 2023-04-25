@@ -5,7 +5,6 @@ import no.nav.pam.stilling.feed.config.TxTemplate
 import no.nav.pam.stilling.feed.dto.AdDTO
 import no.nav.pam.stilling.feed.dto.Feed
 import no.nav.pam.stilling.feed.dto.FeedEntryContent
-import no.nav.pam.stilling.feed.dto.FeedItem
 import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -37,13 +36,12 @@ class FeedControllerTest {
         kjørFlywayMigreringer(ds)
 
         startLocalApplication()
-
     }
 
     @Test
     fun skalLagreOgHenteFeedSider() {
         val adIds = mutableListOf<String>()
-        for (i in 1..(Feed.pageSize*3)+1) {
+        for (i in 1..(Feed.defaultPageSize*3)+1) {
             var ad = objectMapper.readValue(javaClass.getResourceAsStream("/ad_dto.json"), AdDTO::class.java)
                 .copy(uuid = UUID.randomUUID().toString(),
                     title =  "Annonse #$i"
@@ -53,7 +51,7 @@ class FeedControllerTest {
             val adItem = feedService!!.lagreNyStillingsAnnonse(ad)
         }
 
-        Assertions.assertThat(adIds.size).isEqualTo(Feed.pageSize*3 + 1)
+        Assertions.assertThat(adIds.size).isEqualTo(Feed.defaultPageSize*3 + 1)
 
         var feedPageResponse = getFeedPage()
         feedPageResponse.first.items.forEach { adIds.remove(it.feed_entry.uuid) }

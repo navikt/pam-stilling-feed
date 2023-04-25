@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.ObjectMapper
-import java.sql.ResultSet
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -130,7 +129,7 @@ data class Feed(val version: String = "1.0",
                 val items: MutableList<FeedLine> = mutableListOf()
 ) {
     companion object {
-        val pageSize: Int = 100
+        const val defaultPageSize: Int = 10
         val emptyFeed = Feed(
             next_url = "",
             lastModified = ZonedDateTime.now(),
