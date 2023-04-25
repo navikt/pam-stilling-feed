@@ -4,6 +4,45 @@ import org.slf4j.LoggerFactory
 import java.sql.Connection
 import javax.sql.DataSource
 
+/**
+ * TxTemplate er løst basert på ideen bak spring TransactionTemplate – bare mye enklere og mer eksplisitt.
+ * Bruksmønsteret er slik:
+ *
+ * ```
+ * txTemplate = TxTemplate(HikariDataSource(...))
+ *
+ * txTemplate.doInTransaction(txContext) { ctx ->
+ *   val conn = ctx.connection()  // IKKE LUKK CONNECTION ETTER BRUK
+ *   conn.prepareStatement("heftig sql kode her").apply {
+ *      it.setObject(verdier som skal inn i spørringen)
+ *   }.use { statement ->
+ *      val resultSet = statement.executeQuery()
+ *      if (verden_faller_i_grus_vi_må_rulle_tilbake())
+ *          ctx.setRollbackOnly()
+ *      return@doInTransaction doSomethingWithResultSet(resultSet)
+ *   }
+ * }
+ * ```
+ *
+ * Prinsipper:
+ *  - Du får JDBC connection fra TxTemplate
+ *  - Du lukker ikke JDBC connection selv
+ *  - Du lukker ressurser du bruker fra connection (Statement/PreparedStatement)
+ *  - Hvis du skal kalle andre tjenester/funksjoner som skal være en del av samme transkasjon, så sender du med
+ *    eksisterende txTemplate. TxTemplate holder styr på context og om det allerede eksisterer en transaksjon
+ *
+ *
+ *
+ * Likheter og forskjeller fra Spring TransactionTemplate
+ * - TxTemplate forholder seg kun til JDBC connection fra en DataSource. Det er kun testet med postgresql og HikariCP
+ *   Spring TransactionTemplate er supergenerisk og er i stand til å joine transaksjoner fra andre datakilder (f.eks køer)
+ * - Både Spring og TxTemplate baserer seg på at du må utføre det som skal gjøres i en transaksjon innenfor en
+ *   doInTransaction() blokk.
+ * - Spring tilbyr annotasjoner og aspekter for å abstrehere bort doInTransaction - TxTemplate vil aldri gjøre det
+ * - Spring lagrer transaction context i en ThreadLocal slik at du ikke trenger å propagere context selv
+ *   TxTemplate gjør det eksplisitt. Det gir mer "støy" i koden, men er utrolig mye mer robust,
+ *
+ */
 class TxTemplate(private val ds: DataSource) {
     companion object {
         private val LOG = LoggerFactory.getLogger(TxTemplate::class.java)
