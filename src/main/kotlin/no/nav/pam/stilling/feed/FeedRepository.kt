@@ -8,6 +8,7 @@ import no.nav.pam.stilling.feed.dto.FeedPageItem
 import org.slf4j.LoggerFactory
 import java.sql.Timestamp
 import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.util.*
 
 class FeedRepository(private val txTemplate: TxTemplate) {
@@ -106,21 +107,32 @@ class FeedRepository(private val txTemplate: TxTemplate) {
         }
     }
 
-    fun hentFeedPageItemsNyereEnn(seqNo: Long, antall: Int = Feed.defaultPageSize, txContext : TxContext? = null): MutableList<FeedPageItem> {
+    fun hentFeedPageItemsNyereEnn(seqNo: Long, antall: Int = Feed.defaultPageSize,
+                                  sistEndret: ZonedDateTime? = null,
+                                  txContext : TxContext? = null): MutableList<FeedPageItem> {
         return txTemplate.doInTransaction(txContext) { ctx ->
             val feedPageItems = mutableListOf<FeedPageItem>()
             // NB: Dette garanterer ikke at vi har monotont stigende sist_endret...
+            val sistEndretClause = if (sistEndret == null) ""
+                else
+                    " and sist_endret >= ? "
+            val sistEndretIdx = if (sistEndret == null) 0 else 1
+
             val sql = """
                 select id, sist_endret, seq_no, status, title, business_name, municipal, feed_item_id
                 from feed_page_item
-                where seq_no > ?
+                where seq_no > ? $sistEndretClause
                 order by seq_no
                 limit ?
             """.trimIndent()
             val c = ctx.connection()
             c.prepareStatement(sql).apply {
                 this.setObject(1, seqNo)
-                this.setInt(2, antall)
+                sistEndret?.let { s ->
+                    this.setTimestamp(2, Timestamp(s.toInstant().toEpochMilli()))
+                }
+
+                this.setInt(2+sistEndretIdx, antall)
             }.use { statement ->
                 val resultSet = statement.executeQuery()
                 while (resultSet.next())

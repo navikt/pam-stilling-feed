@@ -25,7 +25,20 @@ class FeedService(private val feedRepository: FeedRepository,
         }!!
     }
 
-    fun lagreNyStillingsAnnonse(ad: AdDTO, txContext: TxContext? = null) : Pair<FeedItem, FeedPageItem>? {
+    /**
+     * NB: status==REJECTED gjelder også annonser som er merket som duplikater (tilsynelatende KUN duplikater?).
+     * Skal disse maskeres, eller gjelder det kun annonser som er DELETED eller STOPPED?
+     */
+    private fun adSkalMaskeres(ad: AdDTO) =
+        listOf("STOPPED", "DELETED", "REJECTED").contains(ad.status)
+
+    fun lagreNyStillingsAnnonse(newAd: AdDTO, txContext: TxContext? = null) : Pair<FeedItem, FeedPageItem>? {
+        val ad = if (adSkalMaskeres(newAd))
+                newAd.copy(title = "...", contactList = mutableListOf<ContactDTO>(),
+                    employer = null, businessName = "")
+            else
+                newAd
+
         if (ad.source == "FINN") {
             LOG.info("Ignorerer annonse ${ad.uuid} siden det er en finn annonse")
             return null
@@ -92,10 +105,10 @@ class FeedService(private val feedRepository: FeedRepository,
         return txTemplate.doInTransaction(txContext) { ctx ->
             val førsteItem = feedRepository.hentFeedPageItem(id)
             førsteItem?.let { f ->
-                val items = feedRepository.hentFeedPageItemsNyereEnn(f.seqNo)
+                val items = feedRepository.hentFeedPageItemsNyereEnn(f.seqNo, sistEndret = sistEndret)
                 val sisteItem = if (items.size > 0) items[items.size-1] else førsteItem
                 val sisteItemIPage = if (items.size > 1) items[items.size-2] else sisteItem
-                if (etag !=  null && sistEndret != null &&
+                if (etag != null && sistEndret != null &&
                     sisteItemIPage.id.toString() == etag && sisteItemIPage.lastModified.isBefore(sistEndret)) {
                     // Det har ikke vært endringer siden etag og sistEndret
                     return@doInTransaction Feed.emptyFeed

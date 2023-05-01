@@ -73,21 +73,21 @@ fun mapAd(source: AdDTO, host: String?): FeedAd {
         updated = toZonedDateTime(source.updated)!!,
         workLocations = source.locationList.map { l -> mapLocation(l) },
         title = source.title ?: "",
-        description = source.properties["adtext"],
-        sourceurl = source.properties["sourceurl"],
+        description = source.properties["adtext"] ?: "",
+        sourceurl = source.properties["sourceurl"] ?: "",
         source = source.source,
-        applicationUrl = source.properties["applicationurl"],
-        applicationDue = source.properties["applicationdue"],
+        applicationUrl = source.properties["applicationurl"] ?: "",
+        applicationDue = source.properties["applicationdue"] ?: "",
         // TODO her må vi legge på noe annet, f.eks JANZZ konsept eller STYRK
         occupationCategories = emptyList<FeedOccupation>(),//source.categoryList.map { FeedOccupation(it.level1, it.level2) },
-        jobtitle = source.properties["jobtitle"],
+        jobtitle = source.properties["jobtitle"] ?: "",
         link = link,
         employer = mapEmployer(source),
-        engagementtype = source.properties["engagementtype"],
-        extent = source.properties["extent"],
-        starttime = source.properties["starttime"],
-        positioncount = source.properties["positioncount"],
-        sector = source.properties["sector"]
+        engagementtype = source.properties["engagementtype"] ?: "",
+        extent = source.properties["extent"] ?: "",
+        starttime = source.properties["starttime"] ?: "",
+        positioncount = source.properties["positioncount"] ?: "1" ,
+        sector = source.properties["sector"] ?: ""
     )
 }
 
@@ -95,8 +95,8 @@ fun mapEmployer(source: AdDTO): FeedEmployer {
     return FeedEmployer(
         source.businessName ?: source.employer.let { e -> e?.name ?: "" },
         source.employer.let { e -> e?.orgnr },
-        source.properties["employerdescription"],
-        source.properties["employerhomepage"]
+        source.properties["employerdescription"] ?: "",
+        source.properties["employerhomepage"] ?: ""
     )
 }
 

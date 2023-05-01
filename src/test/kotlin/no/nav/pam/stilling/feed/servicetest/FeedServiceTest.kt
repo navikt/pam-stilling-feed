@@ -4,6 +4,7 @@ import no.nav.pam.stilling.feed.*
 import no.nav.pam.stilling.feed.config.TxTemplate
 import no.nav.pam.stilling.feed.dto.AdDTO
 import no.nav.pam.stilling.feed.dto.Feed
+import no.nav.pam.stilling.feed.dto.FeedAd
 import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -45,18 +46,27 @@ class FeedServiceTest {
             .copy(uuid = UUID.randomUUID().toString())
         val ad1_update = objectMapper.readValue(javaClass.getResourceAsStream("/ad_dto.json"), AdDTO::class.java)
             .copy(uuid = ad1.uuid, title = ad1.title + " endret")
+        val ad3maskert = objectMapper.readValue(javaClass.getResourceAsStream("/ad_dto.json"), AdDTO::class.java)
+            .copy(uuid = UUID.randomUUID().toString(), status = "STOPPED")
 
         val antallEksisterendeAnnonser = antallAnnonser()
 
         feedService!!.lagreNyStillingsAnnonse(ad1)
         feedService!!.lagreNyStillingsAnnonseFraJson(objectMapper.writeValueAsString(ad2))
         feedService!!.lagreNyStillingsAnnonse(ad1_update)
+        feedService!!.lagreNyStillingsAnnonse(ad3maskert)
 
         val antallAnnonser = antallAnnonser()
-        Assertions.assertThat(antallAnnonser-antallEksisterendeAnnonser).isEqualTo(2)
+        Assertions.assertThat(antallAnnonser-antallEksisterendeAnnonser).isEqualTo(3)
 
         val lagretAd1 = feedService!!.hentStillingsAnnonse(UUID.fromString(ad1.uuid))!!
-        //Assertions.assertThat(lagretAd1.json).isEqualTo(ad1_update.title)
+        val lagretFeedAd = objectMapper.readValue(lagretAd1.json, FeedAd::class.java)
+        Assertions.assertThat(lagretFeedAd.title).isEqualTo(ad1_update.title)
+
+        val lagretAd3maskert = feedService!!.hentStillingsAnnonse(UUID.fromString(ad3maskert.uuid))!!
+        Assertions.assertThat(lagretAd3maskert.json).isEmpty()
+        val feedSide = feedService!!.hentSisteSide()!!
+        Assertions.assertThat(feedSide.title).isNotEqualTo(ad3maskert.title)
     }
 
     @Test
@@ -83,4 +93,34 @@ class FeedServiceTest {
         }
         Assertions.assertThat(adIds).isEmpty()
     }
+
+    @Test
+    fun skalLagreOgOppdatereAdsSomFeedItemsITransaksjoner() {
+        val ad1 = objectMapper.readValue(javaClass.getResourceAsStream("/ad_dto.json"), AdDTO::class.java)
+            .copy(uuid = UUID.randomUUID().toString())
+        val ad2 = objectMapper.readValue(javaClass.getResourceAsStream("/ad_dto.json"), AdDTO::class.java)
+            .copy(uuid = UUID.randomUUID().toString())
+        val ad3 = objectMapper.readValue(javaClass.getResourceAsStream("/ad_dto.json"), AdDTO::class.java)
+            .copy(uuid = UUID.randomUUID().toString())
+
+        txTemplate!!.doInTransaction() {ctx ->
+            feedService!!.lagreNyStillingsAnnonse(ad1, ctx)
+
+            txTemplate!!.doInTransaction() { ctxNew -> // Implisitt ny kontekst som ikke er del av eksisterende transaksjon
+                feedService!!.lagreNyStillingsAnnonseFraJson(objectMapper.writeValueAsString(ad2), ctxNew)
+            }
+            txTemplate!!.doInTransaction(ctx) { ctxNew -> // Propagerer kontekst og deltar dermed i eksisterende transaksjon
+                feedService!!.lagreNyStillingsAnnonseFraJson(objectMapper.writeValueAsString(ad2), ctxNew)
+            }
+            ctx.setRollbackOnly()
+        }
+
+        val lagretAd1 = feedService!!.hentStillingsAnnonse(UUID.fromString(ad1.uuid))
+        val lagretAd2 = feedService!!.hentStillingsAnnonse(UUID.fromString(ad2.uuid))
+        val lagretAd3 = feedService!!.hentStillingsAnnonse(UUID.fromString(ad3.uuid))
+        Assertions.assertThat(lagretAd1?.status).isNull()
+        Assertions.assertThat(lagretAd2?.status).isNotNull
+        Assertions.assertThat(lagretAd3?.status).isNull()
+    }
+
 }

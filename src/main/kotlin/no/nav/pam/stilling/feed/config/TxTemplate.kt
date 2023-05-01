@@ -48,7 +48,7 @@ class TxTemplate(private val ds: DataSource) {
         private val LOG = LoggerFactory.getLogger(TxTemplate::class.java)
     }
 
-    fun <R> doInTransaction(existingContext: TxContext?, txBlock: (ctx: TxContext) -> R) : R? {
+    fun <R> doInTransaction(existingContext: TxContext? = null, txBlock: (ctx: TxContext) -> R) : R? {
         val conn = existingContext?.connection() ?: ds.connection
         val isNestedTransaction = existingContext != null
 
