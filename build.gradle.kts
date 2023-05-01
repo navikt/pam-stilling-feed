@@ -42,6 +42,8 @@ dependencies {
 
     implementation("org.apache.kafka:kafka-clients:3.4.0")
 
+    implementation("no.nav.arbeid.pam:pam-styrk-yrkeskategori-mapper:1.20211115-2b77b5e0")
+
     testImplementation(kotlin("test"))
     testImplementation("org.assertj:assertj-core:3.24.2")
     testImplementation("org.testcontainers:testcontainers:1.18.0")
@@ -49,5 +51,4 @@ dependencies {
     testImplementation("org.testcontainers:postgresql:1.18.0")
     testImplementation("org.testcontainers:junit-jupiter:1.18.0")
     testImplementation("io.mockk:mockk:1.13.5")
-
 }

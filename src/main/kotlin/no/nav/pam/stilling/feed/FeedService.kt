@@ -40,6 +40,7 @@ class FeedService(private val feedRepository: FeedRepository,
                 newAd
 
         if (ad.source == "FINN") {
+            // TODO skal vi ignorere FINN annonser?
             LOG.info("Ignorerer annonse ${ad.uuid} siden det er en finn annonse")
             return null
         } else if (ad.publishedByAdmin == null) {

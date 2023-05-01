@@ -4,7 +4,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
+import no.nav.pam.stilling.feed.objectMapper
+import no.nav.pam.yrkeskategorimapper.StyrkCodeConverter
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -23,6 +26,7 @@ data class FeedAd(
     val applicationUrl: String?,
     val applicationDue: String?,
     val occupationCategories: List<FeedOccupation>,
+    val categoryList: List<FeedCategory>,
     val jobtitle: String?,
     val link: String,
     val employer: FeedEmployer,
@@ -49,6 +53,14 @@ data class FeedEmployer(
 data class FeedOccupation(val level1: String,
                           val level2: String)
 
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class FeedCategory (
+    var categoryType: String, // STYRK08, ESCO, JANZZ
+    var code: String, // styrk kode,
+    var name: String,
+    var description: String? = null,
+    var score: Double = 0.0
+)
 
 private fun toZonedDateTime(ldt: LocalDateTime?, default: LocalDateTime? = null) : ZonedDateTime? {
     if (ldt == null && default == null)
@@ -79,7 +91,8 @@ fun mapAd(source: AdDTO, host: String?): FeedAd {
         applicationUrl = source.properties["applicationurl"] ?: "",
         applicationDue = source.properties["applicationdue"] ?: "",
         // TODO her må vi legge på noe annet, f.eks JANZZ konsept eller STYRK
-        occupationCategories = emptyList<FeedOccupation>(),//source.categoryList.map { FeedOccupation(it.level1, it.level2) },
+        occupationCategories = mapOccupations(source.categoryList),
+        categoryList = mapCategories(source),
         jobtitle = source.properties["jobtitle"] ?: "",
         link = link,
         employer = mapEmployer(source),
@@ -90,6 +103,57 @@ fun mapAd(source: AdDTO, host: String?): FeedAd {
         sector = source.properties["sector"] ?: ""
     )
 }
+
+// Mapper fra STYRK til PYRK
+// TODO Skal vi ha med PYRK i ny feed? Er ikke det kun for stillingssøket i elastic
+// Hvis vi ikke skal ha det så må vi fjerne avhengigheten til mapperen i gradle
+private fun mapOccupations(categories: List<CategoryDTO>) : List<FeedOccupation> {
+    val pyrkMapper = StyrkCodeConverter() // NB: Dette bør ikke gjøres for hver annonse side det leser inn ressurser hver gang...
+    val occupations = categories
+        .asSequence()
+        .filter { c -> "STYRK08NAV" == c.categoryType || "STYRK08" == c.categoryType }
+        .mapNotNull { c -> pyrkMapper.lookup(c.code).orElse(null) }
+        .filter { o -> "0" != o.styrkCode }
+        .distinct()
+        .map { o -> FeedOccupation(o.categoryLevel1, o.categoryLevel2) }
+        .sortedBy { it.level1 }
+        .toList()
+    return occupations
+}
+
+/**
+ * Dette er *IKKE* bra:
+ * Her får vi med alle katgoriene fra janzz classifier uten å ta med score
+ */
+private fun mapCategories(ad: AdDTO) : List<FeedCategory> {
+    val scores = mutableMapOf<String, Double>()
+    val styrkScore = ad.properties.getOrDefault("classification_styrk08_score", "0.0")
+    val styrkCode = ad.properties.get("classification_styrk08_code")
+    styrkCode?.let { s -> scores["STYRK08:$s"] = styrkScore.toDouble() }
+    val escoCode = ad.properties.get("classification_esco_code")
+    // Vi tar ikke med esco score... Bruk styrk siden den bør være ganske lik
+    escoCode?.let { e -> scores["ESCO:$e"] = styrkScore.toDouble()  }
+
+    // Hent STYRK scores fra searchtags, dette er en gedigen omvei
+    ad.properties.get("searchtags").let { objectMapper.readValue(it, object : TypeReference<List<SearchTag>>(){} ) }
+        .forEach { t -> scores["STYRK08:${t.label}"] = t.score }
+
+    val cats = ad.categoryList
+        .asSequence()
+        .filter { c -> c.categoryType != null && c.code != null && c.description != null}
+        .mapNotNull { c -> FeedCategory(categoryType = c.categoryType,
+            code = c.code,
+            name = c.name,
+            description = c.description ?: "",
+            score = scores["${c.categoryType}:${c.code}"] ?: scores["${c.categoryType}:${c.name}"] ?: 0.0
+        ) }
+        .sortedBy { it.categoryType }
+        .distinctBy { "${it.categoryType}:${it.code}" }
+        .toList()
+    return cats
+}
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class SearchTag(var label: String, val score: Double)
 
 fun mapEmployer(source: AdDTO): FeedEmployer {
     return FeedEmployer(
