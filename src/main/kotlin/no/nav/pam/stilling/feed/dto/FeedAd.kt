@@ -135,8 +135,8 @@ private fun mapCategories(ad: AdDTO) : List<FeedCategory> {
     escoCode?.let { e -> scores["ESCO:$e"] = styrkScore.toDouble()  }
 
     // Hent STYRK scores fra searchtags, dette er en gedigen omvei
-    ad.properties.get("searchtags").let { objectMapper.readValue(it, object : TypeReference<List<SearchTag>>(){} ) }
-        .forEach { t -> scores["STYRK08:${t.label}"] = t.score }
+    ad.properties.get("searchtags")?.let { objectMapper.readValue(it, object : TypeReference<List<SearchTag>>(){} ) }
+        ?.forEach { t -> scores["STYRK08:${t.label}"] = t.score }
 
     val cats = ad.categoryList
         .asSequence()
