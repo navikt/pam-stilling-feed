@@ -123,7 +123,7 @@ private fun mapOccupations(categories: List<CategoryDTO>) : List<FeedOccupation>
 
 /**
  * Dette er *IKKE* bra:
- * Her får vi med alle katgoriene fra janzz classifier uten å ta med score
+ * Her får vi med alle kategoriene fra janzz classifier og må lete litt her og der for å finne en slags score
  */
 private fun mapCategories(ad: AdDTO) : List<FeedCategory> {
     val scores = mutableMapOf<String, Double>()
@@ -131,7 +131,7 @@ private fun mapCategories(ad: AdDTO) : List<FeedCategory> {
     val styrkCode = ad.properties.get("classification_styrk08_code")
     styrkCode?.let { s -> scores["STYRK08:$s"] = styrkScore.toDouble() }
     val escoCode = ad.properties.get("classification_esco_code")
-    // Vi tar ikke med esco score... Bruk styrk siden den bør være ganske lik
+    // Vi tar ikke med esco score fra pam-ad... Bruk styrk siden den bør være ganske lik
     escoCode?.let { e -> scores["ESCO:$e"] = styrkScore.toDouble()  }
 
     // Hent STYRK scores fra searchtags, dette er en gedigen omvei
@@ -140,7 +140,7 @@ private fun mapCategories(ad: AdDTO) : List<FeedCategory> {
 
     val cats = ad.categoryList
         .asSequence()
-        .filter { c -> c.categoryType != null && c.code != null && c.description != null}
+        .filter { c -> c.categoryType != null && c.code != null}
         .mapNotNull { c -> FeedCategory(categoryType = c.categoryType,
             code = c.code,
             name = c.name,
