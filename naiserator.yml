@@ -54,3 +54,5 @@ spec:
       value: StillingFeed2
     - name: PRIVATE_SECRET
       value: SuperHemmeligNøkkel
+    - name: STILLING_URL_BASE
+      value: "{{ stilling_url_base }}"

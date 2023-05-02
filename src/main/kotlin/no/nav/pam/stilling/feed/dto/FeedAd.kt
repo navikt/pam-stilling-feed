@@ -71,12 +71,12 @@ private fun toZonedDateTime(ldt: LocalDateTime?, default: LocalDateTime? = null)
         return ldt.atZone(ZoneId.of("Europe/Oslo"))
 }
 
-fun mapAd(source: AdDTO, host: String?): FeedAd {
+fun mapAd(source: AdDTO, stillingUrlBase: String?): FeedAd {
     // TODO Burde vi her ha en link til arbeidsplassen?
     // https://arbeidsplassen.nav.no/stillinger/stilling/
     // eller
     // https://arbeidsplassen.dev.nav.no/stillinger/stilling/
-    val link = "https://$host/stillinger/stilling/${source.uuid}"
+    val link = "$stillingUrlBase/${source.uuid}"
 
     return FeedAd(
         uuid = source.uuid,

@@ -11,7 +11,8 @@ import java.util.*
 
 class FeedService(private val feedRepository: FeedRepository,
                   private val txTemplate: TxTemplate,
-                  private val objectMapper: ObjectMapper) {
+                  private val objectMapper: ObjectMapper,
+                  private val stillingUrlBase: String = "https://arbeidsplassen.nav.no/stillinger/stilling") {
     companion object {
         private val LOG = LoggerFactory.getLogger(FeedService::class.java)
 
@@ -49,7 +50,7 @@ class FeedService(private val feedRepository: FeedRepository,
         }
 
         return txTemplate.doInTransaction(txContext) { ctx ->
-            val feedAd = mapAd(ad, "localhost")
+            val feedAd = mapAd(ad, stillingUrlBase)
             val active = ad.status == "ACTIVE"
             val statusDescription = if (active) "ACTIVE" else "INACTIVE"
             val feedJson = if (active) objectMapper.writeValueAsString(feedAd) else ""

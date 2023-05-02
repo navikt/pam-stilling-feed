@@ -45,7 +45,8 @@ fun startApp(dataSource: DataSource,
     val healthService = HealthService()
     val kafkaConsumer = KafkaConfig(env).kafkaConsumer()
     val feedRepository = FeedRepository(txTemplate)
-    val feedService = FeedService(feedRepository, txTemplate, objectMapper)
+    val feedService = FeedService(feedRepository, txTemplate, objectMapper,
+        env["STILLING_URL_BASE"] ?: "https://arbeidsplassen.nav.no/stillinger/stilling")
     val feedController = FeedController(feedService, objectMapper)
     val naisController = NaisController(healthService, prometheusRegistry)
     val kafkaListener = KafkaStillingListener(kafkaConsumer, feedService, objectMapper, txTemplate, healthService)
