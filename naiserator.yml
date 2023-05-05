@@ -56,3 +56,5 @@ spec:
       value: SuperHemmeligNøkkel
     - name: STILLING_URL_BASE
       value: "{{ stilling_url_base }}"
+    - name: TILGANGSSTYRING_ENABLED
+      value: {{ tilgangsstyring_enabled }}

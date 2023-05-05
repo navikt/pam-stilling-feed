@@ -49,7 +49,7 @@ fun startApp(
     kjørFlywayMigreringer(dataSource)
 
     val securityConfig = SecurityConfig(issuer = "nav-no", audience = "feed-api-v2", secret = env.variable("PRIVATE_SECRET"))
-    val accessManager = JavalinAccessManager(securityConfig)
+    val accessManager = JavalinAccessManager(securityConfig, env)
 
     val auth = AuthController(securityConfig)
     val healthService = HealthService()

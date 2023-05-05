@@ -15,7 +15,7 @@ import java.time.format.DateTimeFormatterBuilder
 import java.time.temporal.ChronoField
 import java.util.*
 
-class AuthController(val securityConfig: SecurityConfig) {
+class AuthController(private val securityConfig: SecurityConfig) {
     companion object {
         private val LOG = LoggerFactory.getLogger(AuthController::class.java)
     }

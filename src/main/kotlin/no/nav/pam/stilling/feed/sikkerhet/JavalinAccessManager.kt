@@ -11,21 +11,18 @@ import no.nav.pam.stilling.feed.sikkerhet.SecurityConfig.Companion.getBearerToke
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 
-class JavalinAccessManager(val securityConfig: SecurityConfig) : AccessManager {
+class JavalinAccessManager(private val securityConfig: SecurityConfig, private val env: Map<String, String>) : AccessManager {
     companion object {
         private val LOG = LoggerFactory.getLogger(JavalinAccessManager::class.java)
+
         fun Context.setSubject(subject: String) = attribute("subject", subject)
     }
 
-    private val tilgangsstyringEnabled = false //TODO flytt til env
+    private val tilgangsstyringEnabled = env["TILGANGSSTYRING_ENABLED"].toBoolean()
 
     override fun manage(handler: Handler, ctx: Context, routeRoles: Set<RouteRole>) {
         require(routeRoles.size == 1) { "Støtter kun bruk av en rolle per endepunkt." }
-
-        if (tilgangsstyringEnabled) {
-            validerAutoriseringForRolle(ctx, routeRoles.first())
-        }
-
+        if (tilgangsstyringEnabled) validerAutoriseringForRolle(ctx, routeRoles.first())
         handler.handle(ctx)
     }
 
