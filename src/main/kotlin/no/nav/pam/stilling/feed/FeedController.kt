@@ -51,7 +51,7 @@ class FeedController(private val feedService: FeedService,  private val objectMa
         s?.toIntOrNull() ?: defaultValue
 
     fun hentFeed(ctx: Context, feedPageId: String, pageSize: Int = defaultOutboundPageSize) {
-        LOG.info("Henter feed - Subject: ${hentSubject()}} - Side: $feedPageId")
+        LOG.info("Henter feed - Subject: ${hentSubject()} - Side: $feedPageId")
         val etag = ctx.header("If-None-Match")
         val ifModifiedSinceStr = ctx.header("If-Modified-Since")
 
