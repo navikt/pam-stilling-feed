@@ -38,12 +38,12 @@ class FeedController(private val feedService: FeedService,  private val objectMa
     }
 
     fun hentFeed(ctx: Context, pageSize: Int = defaultOutboundPageSize) {
-        LOG.info("Henter feed - Subject: ${hentSubject()}")
         val sisteSide = ctx.queryParam("last")
         val feedPageItem = if (sisteSide != null) feedService.hentSisteSide() else feedService.hentFørsteSide()
-        if (feedPageItem == null)
+        if (feedPageItem == null) {
+            LOG.warn("Kunne ikke finne feedPageItem - Subject: ${hentSubject()}")
             ctx.status(404)
-        else
+        } else
             hentFeed(ctx, feedPageItem.id.toString(), pageSize)
     }
 
@@ -61,8 +61,10 @@ class FeedController(private val feedService: FeedService,  private val objectMa
         )
 
         if (feed == null) {
+            LOG.warn("Kunne ikke finne side - Subject: ${hentSubject()} - Side: $feedPageId")
             ctx.status(404)
         } else if (feed.items.isEmpty()) {
+            LOG.warn("Side er tom - Subject: ${hentSubject()} - Side: $feedPageId")
             ctx.status(304)
         } else {
             ctx.header("ETag", feed.etag)
@@ -77,6 +79,7 @@ class FeedController(private val feedService: FeedService,  private val objectMa
         val feed = feedService.hentStillingsAnnonse(UUID.fromString(feedEntryId))
 
         if (feed == null) {
+            LOG.warn("Kunne ikke finne feedItem - Subject: ${hentSubject()} - feedEntryId: $feedEntryId")
             ctx.status(404)
         } else {
             ctx.json(FeedEntryContent.fraFeedItem(feed, objectMapper))
