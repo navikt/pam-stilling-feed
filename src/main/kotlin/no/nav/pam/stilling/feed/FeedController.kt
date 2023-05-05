@@ -17,7 +17,7 @@ class FeedController(private val feedService: FeedService,  private val objectMa
         const val defaultOutboundPageSize: Int = 1000
     }
 
-    var subject = MDC.get(SUBJECT_MDC_KEY)
+    private fun hentSubject() = MDC.get(SUBJECT_MDC_KEY)
 
     fun setupRoutes(javalin: Javalin) {
         javalin.get(
@@ -38,7 +38,7 @@ class FeedController(private val feedService: FeedService,  private val objectMa
     }
 
     fun hentFeed(ctx: Context, pageSize: Int = defaultOutboundPageSize) {
-        LOG.info("Henter feed - Subject: $subject")
+        LOG.info("Henter feed - Subject: ${hentSubject()}")
         val sisteSide = ctx.queryParam("last")
         val feedPageItem = if (sisteSide != null) feedService.hentSisteSide() else feedService.hentFørsteSide()
         if (feedPageItem == null)
@@ -51,7 +51,7 @@ class FeedController(private val feedService: FeedService,  private val objectMa
         s?.toIntOrNull() ?: defaultValue
 
     fun hentFeed(ctx: Context, feedPageId: String, pageSize: Int = defaultOutboundPageSize) {
-        LOG.info("Henter feed - Subject: $subject} - Side: $feedPageId")
+        LOG.info("Henter feed - Subject: ${hentSubject()}} - Side: $feedPageId")
         val etag = ctx.header("If-None-Match")
         val ifModifiedSinceStr = ctx.header("If-Modified-Since")
 
@@ -72,7 +72,7 @@ class FeedController(private val feedService: FeedService,  private val objectMa
     }
 
     fun hentFeedItem(ctx: Context, feedEntryId: String) {
-        LOG.info("Henter feed item - Subject: $subject - feedEntryId: $feedEntryId")
+        LOG.info("Henter feed item - Subject: ${hentSubject()} - feedEntryId: $feedEntryId")
 
         val feed = feedService.hentStillingsAnnonse(UUID.fromString(feedEntryId))
 

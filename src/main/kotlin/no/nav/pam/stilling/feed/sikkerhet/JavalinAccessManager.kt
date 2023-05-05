@@ -11,11 +11,9 @@ import no.nav.pam.stilling.feed.sikkerhet.SecurityConfig.Companion.getBearerToke
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 
-class JavalinAccessManager(private val securityConfig: SecurityConfig, private val env: Map<String, String>) : AccessManager {
+class JavalinAccessManager(private val securityConfig: SecurityConfig, env: Map<String, String>) : AccessManager {
     companion object {
         private val LOG = LoggerFactory.getLogger(JavalinAccessManager::class.java)
-
-        fun Context.setSubject(subject: String) = attribute("subject", subject)
     }
 
     private val tilgangsstyringEnabled = env["TILGANGSSTYRING_ENABLED"].toBoolean()
@@ -35,7 +33,6 @@ class JavalinAccessManager(private val securityConfig: SecurityConfig, private v
     private fun validerKonsument(ctx: Context) = getBearerToken(ctx)?.let {
         val parsetToken = securityConfig.parseJWT(it)
         val subject = parsetToken.decodedJWT?.subject ?: "UKJENT"
-        ctx.setSubject(subject)
         MDC.put(SUBJECT_MDC_KEY, subject)
 
         if (parsetToken.decodedJWT == null || !parsetToken.erGyldig) {
