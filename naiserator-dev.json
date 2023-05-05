@@ -2,5 +2,5 @@
   "ingress": ["https://pam-stilling-feed.intern.dev.nav.no/"],
   "kafka_pool": "nav-dev",
   "stilling_url_base": "https://arbeidsplassen.intern.dev.nav.no/stillinger/stilling",
-  "tilgangsstyring_enabled": false
+  "tilgangsstyring_enabled": true
 }
