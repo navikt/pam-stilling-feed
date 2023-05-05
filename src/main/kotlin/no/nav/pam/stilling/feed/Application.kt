@@ -17,11 +17,11 @@ import no.nav.pam.stilling.feed.config.DatabaseConfig
 import no.nav.pam.stilling.feed.config.KafkaConfig
 import no.nav.pam.stilling.feed.config.TxTemplate
 import no.nav.pam.stilling.feed.config.variable
+import no.nav.pam.stilling.feed.sikkerhet.JavalinAccessManager.Companion.getSubject
 import no.nav.pam.stilling.feed.sikkerhet.SecurityConfig
 import org.flywaydb.core.Flyway
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.slf4j.MDC
 import java.util.*
 import javax.sql.DataSource
 
@@ -37,8 +37,6 @@ val objectMapper: ObjectMapper = jacksonObjectMapper().registerModule(JavaTimeMo
     .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
     .disable(DeserializationFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE)
     .setTimeZone(TimeZone.getTimeZone("Europe/Oslo"))
-
-const val SUBJECT_MDC_KEY = "subject"
 
 fun startApp(
     dataSource: DataSource,
@@ -70,7 +68,6 @@ fun startApp(
     naisController.setupRoutes(javalin)
     auth.setupRoutes(javalin)
     feedController.setupRoutes(javalin)
-    javalin.after { _ -> MDC.remove(SUBJECT_MDC_KEY)}
 
     return kafkaListener.startListener()
 }
@@ -110,5 +107,6 @@ fun logRequest(ctx: Context, ms: Float, log: Logger) {
         kv("protocol", ctx.protocol()),
         kv("method", ctx.method()),
         kv("status_code", ctx.statusCode()),
+        kv("subject", ctx.getSubject()),
         kv("elapsed_ms", "$ms"))
 }

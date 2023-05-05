@@ -6,14 +6,14 @@ import io.javalin.http.InternalServerErrorResponse
 import io.javalin.http.UnauthorizedResponse
 import io.javalin.security.AccessManager
 import io.javalin.security.RouteRole
-import no.nav.pam.stilling.feed.SUBJECT_MDC_KEY
 import no.nav.pam.stilling.feed.sikkerhet.SecurityConfig.Companion.getBearerToken
 import org.slf4j.LoggerFactory
-import org.slf4j.MDC
 
 class JavalinAccessManager(private val securityConfig: SecurityConfig, env: Map<String, String>) : AccessManager {
     companion object {
         private val LOG = LoggerFactory.getLogger(JavalinAccessManager::class.java)
+        fun Context.setSubject(subject: String) = attribute("subject", subject)
+        fun Context.getSubject() = attribute<String>("subject")
     }
 
     private val tilgangsstyringEnabled = env["TILGANGSSTYRING_ENABLED"].toBoolean()
@@ -33,7 +33,7 @@ class JavalinAccessManager(private val securityConfig: SecurityConfig, env: Map<
     private fun validerKonsument(ctx: Context) = getBearerToken(ctx)?.let {
         val parsetToken = securityConfig.parseJWT(it)
         val subject = parsetToken.decodedJWT?.subject ?: "UKJENT"
-        MDC.put(SUBJECT_MDC_KEY, subject)
+        ctx.setSubject(subject)
 
         if (parsetToken.decodedJWT == null || !parsetToken.erGyldig) {
             LOG.info("Uautorisert request - Subject $subject")
