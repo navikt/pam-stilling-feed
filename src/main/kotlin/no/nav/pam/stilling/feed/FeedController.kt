@@ -6,6 +6,7 @@ import io.javalin.http.Context
 import no.nav.pam.stilling.feed.dto.FeedEntryContent
 import no.nav.pam.stilling.feed.sikkerhet.Rolle
 import org.slf4j.LoggerFactory
+import org.slf4j.MDC
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
@@ -15,6 +16,8 @@ class FeedController(private val feedService: FeedService,  private val objectMa
         private val LOG = LoggerFactory.getLogger(FeedRepository::class.java)
         const val defaultOutboundPageSize: Int = 1000
     }
+
+    var subject = MDC.get(SUBJECT_MDC_KEY)
 
     fun setupRoutes(javalin: Javalin) {
         javalin.get(
@@ -35,6 +38,7 @@ class FeedController(private val feedService: FeedService,  private val objectMa
     }
 
     fun hentFeed(ctx: Context, pageSize: Int = defaultOutboundPageSize) {
+        LOG.info("Henter feed - Subject: $subject")
         val sisteSide = ctx.queryParam("last")
         val feedPageItem = if (sisteSide != null) feedService.hentSisteSide() else feedService.hentFørsteSide()
         if (feedPageItem == null)
@@ -47,6 +51,7 @@ class FeedController(private val feedService: FeedService,  private val objectMa
         s?.toIntOrNull() ?: defaultValue
 
     fun hentFeed(ctx: Context, feedPageId: String, pageSize: Int = defaultOutboundPageSize) {
+        LOG.info("Henter feed - Subject: $subject} - Side: $feedPageId")
         val etag = ctx.header("If-None-Match")
         val ifModifiedSinceStr = ctx.header("If-Modified-Since")
 
@@ -67,6 +72,8 @@ class FeedController(private val feedService: FeedService,  private val objectMa
     }
 
     fun hentFeedItem(ctx: Context, feedEntryId: String) {
+        LOG.info("Henter feed item - Subject: $subject - feedEntryId: $feedEntryId")
+
         val feed = feedService.hentStillingsAnnonse(UUID.fromString(feedEntryId))
 
         if (feed == null) {
