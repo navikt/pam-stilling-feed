@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.javalin.Javalin
 import io.javalin.http.Context
 import no.nav.pam.stilling.feed.dto.FeedEntryContent
+import no.nav.pam.stilling.feed.sikkerhet.Rolle
 import org.slf4j.LoggerFactory
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -16,11 +17,21 @@ class FeedController(private val feedService: FeedService,  private val objectMa
     }
 
     fun setupRoutes(javalin: Javalin) {
-        javalin.get("/api/v1/feed/{feed_page_id}") { ctx ->
-            hentFeed(ctx, ctx.pathParam("feed_page_id"), toInt(ctx.queryParam("pageSize"), defaultOutboundPageSize)) }
-        javalin.get("/api/v1/feed") { ctx ->
-            hentFeed(ctx, toInt(ctx.queryParam("pageSize"), defaultOutboundPageSize)) }
-        javalin.get("/api/v1/feedentry/{entry_id}") { ctx -> hentFeedItem(ctx, ctx.pathParam("entry_id")) }
+        javalin.get(
+            "/api/v1/feed/{feed_page_id}",
+            { ctx -> hentFeed(ctx, ctx.pathParam("feed_page_id"), toInt(ctx.queryParam("pageSize"), defaultOutboundPageSize)) },
+            Rolle.KONSUMENT
+        )
+        javalin.get(
+            "/api/v1/feed",
+            { ctx -> hentFeed(ctx, toInt(ctx.queryParam("pageSize"), defaultOutboundPageSize)) },
+            Rolle.KONSUMENT
+        )
+        javalin.get(
+            "/api/v1/feedentry/{entry_id}",
+            { ctx -> hentFeedItem(ctx, ctx.pathParam("entry_id")) },
+            Rolle.KONSUMENT
+        )
     }
 
     fun hentFeed(ctx: Context, pageSize: Int = defaultOutboundPageSize) {
