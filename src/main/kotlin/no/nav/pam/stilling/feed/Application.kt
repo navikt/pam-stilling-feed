@@ -104,11 +104,11 @@ fun startJavalin(
 
 fun logRequest(ctx: Context, ms: Float, log: Logger) {
     log.info("${ctx.method()} ${ctx.url()} ${ctx.statusCode()}",
+        kv("subject", ctx.attribute<String>(SUBJECT_MDC_KEY)),
         kv("method", ctx.method()),
         kv("requested_uri", ctx.path()),
         kv("requested_url", ctx.url()),
         kv("protocol", ctx.protocol()),
-        kv("method", ctx.method()),
         kv("status_code", ctx.statusCode()),
         kv("elapsed_ms", "$ms"))
 }
