@@ -34,6 +34,7 @@ class JavalinAccessManager(private val securityConfig: SecurityConfig, env: Map<
         val parsetToken = securityConfig.parseJWT(it)
         val subject = parsetToken.decodedJWT?.subject ?: "UKJENT"
         MDC.put(SUBJECT_MDC_KEY, subject)
+        ctx.attribute(SUBJECT_MDC_KEY, subject)
 
         if (parsetToken.decodedJWT == null || !parsetToken.erGyldig) {
             LOG.info("Uautorisert request - Subject $subject")
