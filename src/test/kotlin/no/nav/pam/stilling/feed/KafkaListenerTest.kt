@@ -14,29 +14,25 @@ import org.apache.kafka.common.serialization.ByteArraySerializer
 import org.apache.kafka.common.serialization.StringSerializer
 import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.util.*
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@Disabled
 class KafkaListenerTest {
-    var feedRepository: FeedRepository? = null
-    var feedService: FeedService? = null
-    var txTemplate: TxTemplate? = null
-    var kafkaProducer: KafkaProducer<String?, ByteArray?>? = null
     val topic = getLokalEnv()["STILLING_INTERN_TOPIC"]
     val adIds = mutableListOf<String>()
-    var admin: Admin? = null
+
+    lateinit var feedService: FeedService
+    lateinit var kafkaProducer: KafkaProducer<String?, ByteArray?>
+    lateinit var admin: Admin
 
     @BeforeAll
     fun init() {
         val ds = dataSource
+        val txTemplate = TxTemplate(ds)
 
-        txTemplate = TxTemplate(ds)
-        feedRepository = FeedRepository(txTemplate!!)
-        feedService = FeedService(feedRepository!!, txTemplate!!, objectMapper)
+        feedService = FeedService(FeedRepository(txTemplate), txTemplate, objectMapper)
         kjørFlywayMigreringer(ds)
 
         val kafkaConfig = mutableMapOf<String, Any>(
@@ -47,16 +43,11 @@ class KafkaListenerTest {
             ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to lokalKafka.bootstrapServers
         )
 
-        kafkaConfig.putAll(getLokalEnv())
         kafkaProducer = KafkaProducer<String?, ByteArray?>(kafkaConfig)
         admin = Admin.create(mapOf(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG to lokalKafka.bootstrapServers))
-        createTopic()
-        startLocalApplication()
-    }
+            .apply { createTopics(listOf(NewTopic(topic, 1, 1))).values()[topic]?.get() }
 
-    private fun createTopic() {
-        val newTopic = NewTopic(topic!!, 1, 1)
-        admin!!.createTopics(listOf(newTopic)).values().get(topic)!!.get()
+        startLocalApplication()
     }
 
     private fun publiserTilKafka() {
@@ -67,32 +58,27 @@ class KafkaListenerTest {
                     title = "Annonse #$i"
                 )
             adIds.add(ad.uuid)
-            kafkaProducer!!.send(ProducerRecord(topic, ad.uuid, objectMapper.writeValueAsBytes(ad))).get().offset()
+            kafkaProducer.send(ProducerRecord(topic, ad.uuid, objectMapper.writeValueAsBytes(ad))).get().offset()
         }
     }
 
     @Test
-    @Disabled
     fun skalKonsumereKafkameldinger() {
         publiserTilKafka()
         Assertions.assertThat(adIds.size).isEqualTo(Feed.defaultPageSize * 3 + 1)
 
-        admin!!.describeTopics(listOf(topic)).allTopicNames().get().forEach{println(it)}
-        admin!!.listConsumerGroups().all().get().forEach{println(it)}
-
+        admin.describeTopics(listOf(topic)).allTopicNames().get().forEach{println(it)}
+        admin.listConsumerGroups().all().get().forEach{println(it)}
 
         var maxAntallForsøk = 2
         var ad: FeedItem? = null
         while (maxAntallForsøk > 0 && ad == null) {
-            println("Forsøk $maxAntallForsøk")
-            ad = feedService!!.hentStillingsAnnonse(UUID.fromString(adIds[0]))
+            ad = feedService.hentStillingsAnnonse(UUID.fromString(adIds[0]))
             Thread.sleep(11000L)
             maxAntallForsøk--
         }
 
-        //println(ad)
         Assertions.assertThat(ad).isNotNull
     }
-
 }
 

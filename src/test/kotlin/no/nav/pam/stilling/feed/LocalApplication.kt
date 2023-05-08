@@ -8,32 +8,21 @@ import org.testcontainers.containers.KafkaContainer
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
 
-
 fun main() {
     startLocalApplication()
 }
 
 val lokalUrlBase = "http://localhost:8080"
 
-val lokalPostgres: PostgreSQLContainer<*>
-    get() {
-        val postgres = PostgreSQLContainer(DockerImageName.parse("postgres:14.4-alpine"))
-            .withDatabaseName("dbname")
-            .withUsername("username")
-            .withPassword("pwd")
+val lokalPostgres: PostgreSQLContainer<*> =
+    PostgreSQLContainer(DockerImageName.parse("postgres:14.4-alpine"))
+        .withDatabaseName("dbname")
+        .withUsername("username")
+        .withPassword("pwd")
+        .apply { start() }
 
-        postgres.start()
-        return postgres
-    }
-
-
-val lokalKafka: KafkaContainer
-    get() {
-        val kafka = KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.3.2"))
-            .withKraft()
-        kafka.start()
-        return kafka
-    }
+val lokalKafka: KafkaContainer =
+    KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.3.2")).withKraft().apply { start() }
 
 val dataSource = HikariConfig().apply {
     jdbcUrl = lokalPostgres.jdbcUrl
@@ -59,7 +48,7 @@ fun getLokalEnv() = env
 val prometheusRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
 
 private var harStartetApplikasjonen = false
-private var listenerThread : Thread? = null
+private var listenerThread: Thread? = null
 
 fun startLocalApplication(): Thread {
     if (!harStartetApplikasjonen) {
