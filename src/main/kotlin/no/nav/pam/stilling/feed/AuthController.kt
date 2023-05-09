@@ -1,12 +1,11 @@
 package no.nav.pam.stilling.feed
 
-import com.auth0.jwt.JWT
-import com.auth0.jwt.JWTVerifier
-import com.auth0.jwt.algorithms.Algorithm
-import com.auth0.jwt.exceptions.JWTDecodeException
 import com.auth0.jwt.interfaces.Payload
 import io.javalin.Javalin
 import io.javalin.http.Context
+import no.nav.pam.stilling.feed.sikkerhet.Rolle
+import no.nav.pam.stilling.feed.sikkerhet.SecurityConfig
+import no.nav.pam.stilling.feed.sikkerhet.SecurityConfig.Companion.getBearerToken
 import org.slf4j.LoggerFactory
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -16,35 +15,15 @@ import java.time.format.DateTimeFormatterBuilder
 import java.time.temporal.ChronoField
 import java.util.*
 
-class AuthController(private val issuer: String, private val audience: String, secret: String) {
+class AuthController(private val securityConfig: SecurityConfig) {
     companion object {
         private val LOG = LoggerFactory.getLogger(AuthController::class.java)
     }
 
-        private val algorithm = Algorithm.HMAC256(secret)
-
-        fun newHmacJwtVerifier(): JWTVerifier =
-            JWT.require(algorithm) // signature
-                .withIssuer(issuer)
-                .withAudience(audience)
-                .build()
-
-        fun newTokenFor(subject: String, expires: Date? = null): String =
-            JWT.create()
-                .withSubject(subject)
-                .withIssuer(issuer)
-                .withAudience(audience)
-                .withIssuedAt(Date())
-                .withExpiresAt(expires)
-                .sign(algorithm)
-
     fun setupRoutes(javalin: Javalin) {
-        javalin.get("/internal/api/tokenInfo") { ctx ->
-            tokenInfo(ctx)
-        }
-        javalin.post("/internal/api/newApiToken") { ctx ->
-            newApiToken(ctx)
-        }
+        // TODO Burde vi ha noe auth på dette selv om det bare er tilgjengelig på internt nett?
+        javalin.get("/internal/api/tokenInfo", { ctx -> tokenInfo(ctx) }, Rolle.UNPROTECTED)
+        javalin.post("/internal/api/newApiToken", { ctx -> newApiToken(ctx) }, Rolle.UNPROTECTED)
     }
 
     private fun newApiToken(ctx: Context) {
@@ -61,7 +40,7 @@ class AuthController(private val issuer: String, private val audience: String, s
                 ctx.contentType("text/plain")
                 ctx.result("Missing required parameter: subject")
             } else {
-                val newToken = newTokenFor(subject, expires)
+                val newToken = securityConfig.newTokenFor(subject, expires)
                 LOG.info("New token created for $subject")
                 ctx.status(200)
                 ctx.contentType("text/plain")
@@ -77,33 +56,25 @@ class AuthController(private val issuer: String, private val audience: String, s
     private fun tokenInfo(ctx: Context) {
         val authHeader = getBearerToken(ctx)
         authHeader?.let { t ->
-            try {
-                val decoded = JWT.decode(t)
-                val valid = try {
-                    newHmacJwtVerifier().verify(decoded)
-                    "OK"
-                } catch (e: Exception) {
-                    "Not OK"
-                }
+            val (decodedJWT, erGyldig) = securityConfig.parseJWT(t)
 
+            if (decodedJWT != null) {
                 ctx.result(
                     """
-    
                         Token information:
-                        Algorithm:    ${decoded.algorithm}
-                        Subject:      ${decoded.subject}
-                        Issuer:       ${decoded.issuer}
-                        Issued at:    ${decoded.issuedAt}
-                        Expires:      ${decoded.expiresAt ?: "not set"}
-                        Verification: ${valid}
-                        
+                        Algorithm:    ${decodedJWT.algorithm}
+                        Subject:      ${decodedJWT.subject}
+                        Issuer:       ${decodedJWT.issuer}
+                        Issued at:    ${decodedJWT.issuedAt}
+                        Expires:      ${decodedJWT.expiresAt ?: "not set"}
+                        Verification: ${if (erGyldig) "OK" else "Not OK"}
                     """.trimIndent()
                 )
                 ctx.contentType("text/plain")
                 ctx.status(200)
-            } catch (e: JWTDecodeException) {
+            } else {
                 ctx.status(501)
-                ctx.result("Unable to decode JWT token: ${e.message}")
+                ctx.result("Unable to decode JWT token")
             }
         }
 
@@ -112,16 +83,6 @@ class AuthController(private val issuer: String, private val audience: String, s
             ctx.result("Missing Authorization header")
         }
     }
-
-
-    fun getBearerToken(ctx: Context): String? {
-        ctx.header("Authorization")?.let {
-            if (it.startsWith("bearer ", true))
-                return it.substring("bearer ".length).trim()
-        }
-        return null
-    }
-
 
     class DenylistVerifier(private val denylist: Map<String, Long>) {
         fun isDenied(jwt: Payload): Boolean {

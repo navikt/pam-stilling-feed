@@ -11,14 +11,17 @@ import io.javalin.json.JavalinJackson
 import io.javalin.micrometer.MicrometerPlugin
 import io.micrometer.prometheus.PrometheusConfig
 import io.micrometer.prometheus.PrometheusMeterRegistry
-import no.nav.pam.stilling.feed.config.DatabaseConfig
-import no.nav.pam.stilling.feed.config.TxTemplate
-import org.flywaydb.core.Flyway
-import org.slf4j.LoggerFactory
 import net.logstash.logback.argument.StructuredArguments.kv
+import no.nav.pam.stilling.feed.sikkerhet.JavalinAccessManager
+import no.nav.pam.stilling.feed.config.DatabaseConfig
 import no.nav.pam.stilling.feed.config.KafkaConfig
+import no.nav.pam.stilling.feed.config.TxTemplate
 import no.nav.pam.stilling.feed.config.variable
+import no.nav.pam.stilling.feed.sikkerhet.SecurityConfig
+import org.flywaydb.core.Flyway
 import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import org.slf4j.MDC
 import java.util.*
 import javax.sql.DataSource
 
@@ -35,13 +38,20 @@ val objectMapper: ObjectMapper = jacksonObjectMapper().registerModule(JavaTimeMo
     .disable(DeserializationFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE)
     .setTimeZone(TimeZone.getTimeZone("Europe/Oslo"))
 
-fun startApp(dataSource: DataSource,
-             prometheusRegistry : PrometheusMeterRegistry,
-             env: Map<String, String>) : Thread {
+const val SUBJECT_MDC_KEY = "subject"
+
+fun startApp(
+    dataSource: DataSource,
+    prometheusRegistry: PrometheusMeterRegistry,
+    env: Map<String, String>
+): Thread {
     val txTemplate = TxTemplate(dataSource)
     kjørFlywayMigreringer(dataSource)
 
-    val auth = AuthController(issuer = "nav-no", audience = "feed-api-v2", secret = env.variable("PRIVATE_SECRET"))
+    val securityConfig = SecurityConfig(issuer = "nav-no", audience = "feed-api-v2", secret = env.variable("PRIVATE_SECRET"))
+    val accessManager = JavalinAccessManager(securityConfig, env)
+
+    val auth = AuthController(securityConfig)
     val healthService = HealthService()
     val kafkaConsumer = KafkaConfig(env).kafkaConsumer()
     val feedRepository = FeedRepository(txTemplate)
@@ -53,17 +63,17 @@ fun startApp(dataSource: DataSource,
 
     val javalin = startJavalin(port = 8080,
         jsonMapper = JavalinJackson(objectMapper),
-        meterRegistry = prometheusRegistry
+        meterRegistry = prometheusRegistry,
+        accessManager = accessManager
     )
 
     naisController.setupRoutes(javalin)
     auth.setupRoutes(javalin)
     feedController.setupRoutes(javalin)
+    javalin.after { _ -> MDC.remove(SUBJECT_MDC_KEY)}
 
     return kafkaListener.startListener()
 }
-
-
 
 fun kjørFlywayMigreringer(dataSource: DataSource) {
     Flyway.configure()
@@ -73,12 +83,18 @@ fun kjørFlywayMigreringer(dataSource: DataSource) {
         .migrate()
 }
 
-fun startJavalin(port: Int = 8080, jsonMapper: JavalinJackson, meterRegistry: PrometheusMeterRegistry): Javalin {
+fun startJavalin(
+    port: Int = 8080,
+    jsonMapper: JavalinJackson,
+    meterRegistry: PrometheusMeterRegistry,
+    accessManager: JavalinAccessManager
+): Javalin {
     val requestLogger = LoggerFactory.getLogger("access")
     val micrometerPlugin = MicrometerPlugin.create { micrometerConfig ->
         micrometerConfig.registry = meterRegistry
     }
     return Javalin.create{
+        it.accessManager(accessManager)
         it.requestLogger.http {ctx, ms -> logRequest(ctx, ms, requestLogger)}
         it.http.defaultContentType = "application/json"
         it.jsonMapper(jsonMapper)
@@ -88,11 +104,11 @@ fun startJavalin(port: Int = 8080, jsonMapper: JavalinJackson, meterRegistry: Pr
 
 fun logRequest(ctx: Context, ms: Float, log: Logger) {
     log.info("${ctx.method()} ${ctx.url()} ${ctx.statusCode()}",
+        kv("subject", ctx.attribute<String>(SUBJECT_MDC_KEY)),
         kv("method", ctx.method()),
         kv("requested_uri", ctx.path()),
         kv("requested_url", ctx.url()),
         kv("protocol", ctx.protocol()),
-        kv("method", ctx.method()),
         kv("status_code", ctx.statusCode()),
         kv("elapsed_ms", "$ms"))
 }

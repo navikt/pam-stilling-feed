@@ -4,7 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.javalin.Javalin
 import io.javalin.http.Context
 import no.nav.pam.stilling.feed.dto.FeedEntryContent
+import no.nav.pam.stilling.feed.sikkerhet.Rolle
 import org.slf4j.LoggerFactory
+import org.slf4j.MDC
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
@@ -15,20 +17,33 @@ class FeedController(private val feedService: FeedService,  private val objectMa
         const val defaultOutboundPageSize: Int = 1000
     }
 
+    private fun hentSubject() = MDC.get(SUBJECT_MDC_KEY)
+
     fun setupRoutes(javalin: Javalin) {
-        javalin.get("/api/v1/feed/{feed_page_id}") { ctx ->
-            hentFeed(ctx, ctx.pathParam("feed_page_id"), toInt(ctx.queryParam("pageSize"), defaultOutboundPageSize)) }
-        javalin.get("/api/v1/feed") { ctx ->
-            hentFeed(ctx, toInt(ctx.queryParam("pageSize"), defaultOutboundPageSize)) }
-        javalin.get("/api/v1/feedentry/{entry_id}") { ctx -> hentFeedItem(ctx, ctx.pathParam("entry_id")) }
+        javalin.get(
+            "/api/v1/feed/{feed_page_id}",
+            { ctx -> hentFeed(ctx, ctx.pathParam("feed_page_id"), toInt(ctx.queryParam("pageSize"), defaultOutboundPageSize)) },
+            Rolle.KONSUMENT
+        )
+        javalin.get(
+            "/api/v1/feed",
+            { ctx -> hentFeed(ctx, toInt(ctx.queryParam("pageSize"), defaultOutboundPageSize)) },
+            Rolle.KONSUMENT
+        )
+        javalin.get(
+            "/api/v1/feedentry/{entry_id}",
+            { ctx -> hentFeedItem(ctx, ctx.pathParam("entry_id")) },
+            Rolle.KONSUMENT
+        )
     }
 
     fun hentFeed(ctx: Context, pageSize: Int = defaultOutboundPageSize) {
         val sisteSide = ctx.queryParam("last")
         val feedPageItem = if (sisteSide != null) feedService.hentSisteSide() else feedService.hentFørsteSide()
-        if (feedPageItem == null)
+        if (feedPageItem == null) {
+            LOG.warn("Kunne ikke finne feedPageItem - Subject: ${hentSubject()}")
             ctx.status(404)
-        else
+        } else
             hentFeed(ctx, feedPageItem.id.toString(), pageSize)
     }
 
@@ -36,6 +51,7 @@ class FeedController(private val feedService: FeedService,  private val objectMa
         s?.toIntOrNull() ?: defaultValue
 
     fun hentFeed(ctx: Context, feedPageId: String, pageSize: Int = defaultOutboundPageSize) {
+        LOG.info("Henter feed - Subject: ${hentSubject()} - Side: $feedPageId")
         val etag = ctx.header("If-None-Match")
         val ifModifiedSinceStr = ctx.header("If-Modified-Since")
 
@@ -45,8 +61,10 @@ class FeedController(private val feedService: FeedService,  private val objectMa
         )
 
         if (feed == null) {
+            LOG.warn("Kunne ikke finne side - Subject: ${hentSubject()} - Side: $feedPageId")
             ctx.status(404)
         } else if (feed.items.isEmpty()) {
+            LOG.warn("Side er tom - Subject: ${hentSubject()} - Side: $feedPageId")
             ctx.status(304)
         } else {
             ctx.header("ETag", feed.etag)
@@ -56,9 +74,12 @@ class FeedController(private val feedService: FeedService,  private val objectMa
     }
 
     fun hentFeedItem(ctx: Context, feedEntryId: String) {
+        LOG.info("Henter feed item - Subject: ${hentSubject()} - feedEntryId: $feedEntryId")
+
         val feed = feedService.hentStillingsAnnonse(UUID.fromString(feedEntryId))
 
         if (feed == null) {
+            LOG.warn("Kunne ikke finne feedItem - Subject: ${hentSubject()} - feedEntryId: $feedEntryId")
             ctx.status(404)
         } else {
             ctx.json(FeedEntryContent.fraFeedItem(feed, objectMapper))
