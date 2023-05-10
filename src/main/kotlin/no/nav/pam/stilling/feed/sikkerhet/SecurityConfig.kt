@@ -7,13 +7,13 @@ import com.auth0.jwt.exceptions.JWTDecodeException
 import com.auth0.jwt.interfaces.DecodedJWT
 import io.javalin.http.Context
 import io.javalin.security.RouteRole
-import no.nav.pam.stilling.feed.AuthController
+import no.nav.pam.stilling.feed.TokenController
 import org.slf4j.LoggerFactory
 import java.util.*
 
 class SecurityConfig(private val issuer: String, private val audience: String, secret: String) {
     companion object {
-        private val LOG = LoggerFactory.getLogger(AuthController::class.java)
+        private val LOG = LoggerFactory.getLogger(TokenController::class.java)
 
         fun getBearerToken(ctx: Context): String? = ctx.header("Authorization")?.let {
             if (it.startsWith("bearer ", true)) it.substring("bearer ".length).trim()
@@ -29,12 +29,12 @@ class SecurityConfig(private val issuer: String, private val audience: String, s
             .withAudience(audience)
             .build()
 
-    fun newTokenFor(subject: String, expires: Date? = null): String =
+    fun newTokenFor(subject: String, issuedAt: Date = Date(), expires: Date? = null): String =
         JWT.create()
             .withSubject(subject)
             .withIssuer(issuer)
             .withAudience(audience)
-            .withIssuedAt(Date())
+            .withIssuedAt(issuedAt)
             .withExpiresAt(expires)
             .sign(algorithm)
 

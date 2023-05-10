@@ -51,7 +51,9 @@ fun startApp(
     val securityConfig = SecurityConfig(issuer = "nav-no", audience = "feed-api-v2", secret = env.variable("PRIVATE_SECRET"))
     val accessManager = JavalinAccessManager(securityConfig, env)
 
-    val auth = AuthController(securityConfig)
+    val tokenRepository = TokenRepository(txTemplate)
+    val tokenService = TokenService(tokenRepository, txTemplate)
+    val auth = TokenController(securityConfig, tokenService)
     val healthService = HealthService()
     val kafkaConsumer = KafkaConfig(env).kafkaConsumer()
     val feedRepository = FeedRepository(txTemplate)

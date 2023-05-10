@@ -21,6 +21,8 @@ node_modules/
 repo_test_dir
 **/webapp/static/bundle.js
 /*.csv
+build
+.gradle
 
 screenshots
 /qa/htmlreport/report.html
