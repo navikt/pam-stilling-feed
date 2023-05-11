@@ -39,7 +39,7 @@ class TokenRepository(private val txTemplate: TxTemplate) {
     fun invaliderTokensForKonsument(konsumentId: UUID, txContext: TxContext? = null) =
         txTemplate.doInTransaction(txContext) { ctx ->
             ctx.connection()
-                .prepareStatement("UPDATE token SET invalidated=TRUE AND invalidated_at=? WHERE consumer_id=?")
+                .prepareStatement("UPDATE token SET invalidated=TRUE, invalidated_at=? WHERE consumer_id=?")
                 .apply {
                     setTimestamp(1, Timestamp.valueOf(LocalDateTime.now()))
                     setObject(2, konsumentId)

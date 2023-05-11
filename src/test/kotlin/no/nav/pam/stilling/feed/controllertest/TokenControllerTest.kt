@@ -4,6 +4,7 @@ import no.nav.pam.stilling.feed.*
 import no.nav.pam.stilling.feed.config.TxTemplate
 import no.nav.pam.stilling.feed.dto.KonsumentDTO
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.net.URI
@@ -97,7 +98,7 @@ class TokenControllerTest {
         Thread.sleep(1000L) // For å få ulikt sekund fra forrige token
         sendPostRequest(TOKEN_URL, "consumerId=${konsumentFraDb.id}")
         val tokensEtterTredjeKall = hentTokens()
-        val tredjeToken = tokensEtterAndreKall.first { it.id in listOf(førsteToken.id, andreToken.id)}
+        val tredjeToken = tokensEtterTredjeKall.first { it.id !in listOf(førsteToken.id, andreToken.id)}
 
         assertEquals(3, tokensEtterTredjeKall.size)
         assertFalse(tredjeToken.invalidated)
