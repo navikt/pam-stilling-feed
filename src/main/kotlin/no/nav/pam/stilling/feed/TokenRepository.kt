@@ -4,6 +4,7 @@ import no.nav.pam.stilling.feed.config.TxContext
 import no.nav.pam.stilling.feed.config.TxTemplate
 import no.nav.pam.stilling.feed.dto.KonsumentDTO
 import java.sql.Timestamp
+import java.time.Instant
 import java.time.LocalDateTime
 import java.util.*
 
@@ -18,9 +19,9 @@ class TokenRepository(private val txTemplate: TxTemplate) {
                 ).apply {
                     setObject(1, konsument.id)
                     setString(2, konsument.identifikator)
-                    setString(3, konsument.identifikator)
-                    setString(4, konsument.identifikator)
-                    setString(5, konsument.identifikator)
+                    setString(3, konsument.email)
+                    setString(4, konsument.telefon)
+                    setString(5, konsument.kontaktperson)
                     setTimestamp(6, Timestamp.valueOf(konsument.opprettet))
                 }.executeUpdate()
         }
@@ -29,7 +30,7 @@ class TokenRepository(private val txTemplate: TxTemplate) {
     fun hentKonsument(id: UUID, txContext : TxContext? = null) =
         txTemplate.doInTransaction(txContext) { ctx ->
             ctx.connection()
-                .prepareStatement("select * from feed_consumer where id = ?")
+                .prepareStatement("SELECT * FROM feed_consumer WHERE id = ?")
                 .apply { setObject(1, id) }
                 .executeQuery()
                 .takeIf { it.next() }?.let { KonsumentDTO.fraDatabase(it) }
@@ -45,7 +46,7 @@ class TokenRepository(private val txTemplate: TxTemplate) {
                 }.executeUpdate()
         }
 
-    fun lagreNyttToken(konsumentId: UUID, jwt: String, issuedAt: Date, txContext: TxContext? = null) =
+    fun lagreNyttToken(konsumentId: UUID, jwt: String, issuedAt: Instant, txContext: TxContext? = null) =
         txTemplate.doInTransaction(txContext) { ctx ->
             ctx.connection()
                 .prepareStatement("INSERT INTO token(id, consumer_id, jwt, issued_at) VALUES(?, ?, ?, ?)")
@@ -53,7 +54,7 @@ class TokenRepository(private val txTemplate: TxTemplate) {
                     setObject(1, UUID.randomUUID())
                     setObject(2, konsumentId)
                     setString(3, jwt)
-                    setTimestamp(4, Timestamp.from(issuedAt.toInstant()))
+                    setTimestamp(4, Timestamp.from(issuedAt))
                 }.executeUpdate()
         }
 }

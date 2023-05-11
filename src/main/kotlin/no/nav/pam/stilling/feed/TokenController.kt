@@ -9,6 +9,7 @@ import no.nav.pam.stilling.feed.sikkerhet.Rolle
 import no.nav.pam.stilling.feed.sikkerhet.SecurityConfig
 import no.nav.pam.stilling.feed.sikkerhet.SecurityConfig.Companion.getBearerToken
 import org.slf4j.LoggerFactory
+import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -69,7 +70,7 @@ class TokenController(private val securityConfig: SecurityConfig, private val to
                 ctx.contentType("text/plain")
                 ctx.result("Consumer $subject not found")
             } else {
-                val issuedAt = Date()
+                val issuedAt = Instant.now()
                 val newToken = securityConfig.newTokenFor(subject.toString(), issuedAt, expires)
                 tokenService.lagreNyttTokenForKonsument(subject, newToken, issuedAt)
 

@@ -1,6 +1,7 @@
 package no.nav.pam.stilling.feed.dto
 
 import java.sql.ResultSet
+import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.util.UUID
 
@@ -19,7 +20,7 @@ data class KonsumentDTO(
             email = rs.getString("email"),
             telefon = rs.getString("telefon"),
             kontaktperson = rs.getString("kontaktperson"),
-            opprettet = rs.getObject("opprettet") as LocalDateTime
+            opprettet = (rs.getObject("opprettet") as Timestamp).toLocalDateTime()
         )
     }
 }

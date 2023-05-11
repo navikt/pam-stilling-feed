@@ -12,7 +12,7 @@ fun main() {
     startLocalApplication()
 }
 
-val lokalUrlBase = "http://localhost:8080"
+const val lokalUrlBase = "http://localhost:8080"
 
 val lokalPostgres: PostgreSQLContainer<*> =
     PostgreSQLContainer(DockerImageName.parse("postgres:14.4-alpine"))

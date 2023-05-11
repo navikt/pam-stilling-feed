@@ -9,6 +9,7 @@ import io.javalin.http.Context
 import io.javalin.security.RouteRole
 import no.nav.pam.stilling.feed.TokenController
 import org.slf4j.LoggerFactory
+import java.time.Instant
 import java.util.*
 
 class SecurityConfig(private val issuer: String, private val audience: String, secret: String) {
@@ -29,7 +30,7 @@ class SecurityConfig(private val issuer: String, private val audience: String, s
             .withAudience(audience)
             .build()
 
-    fun newTokenFor(subject: String, issuedAt: Date = Date(), expires: Date? = null): String =
+    fun newTokenFor(subject: String, issuedAt: Instant = Instant.now(), expires: Date? = null): String =
         JWT.create()
             .withSubject(subject)
             .withIssuer(issuer)
