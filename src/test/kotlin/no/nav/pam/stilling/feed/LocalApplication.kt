@@ -5,6 +5,7 @@ import com.zaxxer.hikari.HikariDataSource
 import io.micrometer.prometheus.PrometheusConfig
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import no.nav.pam.stilling.feed.config.TxTemplate
+import no.nav.pam.stilling.feed.sikkerhet.SecurityConfig
 import org.testcontainers.containers.KafkaContainer
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
@@ -46,9 +47,13 @@ private val env = mutableMapOf(
     "security.protocol" to "PLAINTEXT",
     "PRIVATE_SECRET" to "SuperHemmeligNøkkel",
     "STILLING_URL_BASE" to "https://arbeidsplassen.nav.no/stillinger/stilling",
-    "KAFKA_BROKERS" to lokalKafka.bootstrapServers
+    "KAFKA_BROKERS" to lokalKafka.bootstrapServers,
+    "TILGANGSSTYRING_ENABLED" to "false"
 )
+
 fun getLokalEnv() = env
+
+val securityConfig = SecurityConfig(issuer = "nav-test", audience = "feed-api-v2-test", secret = getLokalEnv()["PRIVATE_SECRET"]!!)
 
 val prometheusRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
 
@@ -61,6 +66,7 @@ fun startLocalApplication(): Thread {
         listenerThread = startApp(
             dataSource,
             prometheusRegistry,
+            securityConfig,
             env
         )
         harStartetApplikasjonen = true

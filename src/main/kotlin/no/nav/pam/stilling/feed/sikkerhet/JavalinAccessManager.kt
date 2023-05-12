@@ -16,7 +16,7 @@ class JavalinAccessManager(private val securityConfig: SecurityConfig, env: Map<
         private val LOG = LoggerFactory.getLogger(JavalinAccessManager::class.java)
     }
 
-    private val tilgangsstyringEnabled = env["TILGANGSSTYRING_ENABLED"].toBoolean()
+    private val tilgangsstyringEnabled = env["TILGANGSSTYRING_ENABLED"]!!.toBooleanStrict()
 
     override fun manage(handler: Handler, ctx: Context, routeRoles: Set<RouteRole>) {
         require(routeRoles.size == 1) { "Støtter kun bruk av en rolle per endepunkt." }

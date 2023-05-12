@@ -29,8 +29,9 @@ fun main() {
     val env = System.getenv()
     val prometheusRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
     val dataSource = DatabaseConfig(env, prometheusRegistry.prometheusRegistry).lagDatasource()
+    val securityConfig = SecurityConfig(issuer = "nav-no", audience = "feed-api-v2", secret = env.variable("PRIVATE_SECRET"))
 
-    startApp(dataSource, prometheusRegistry, env)
+    startApp(dataSource, prometheusRegistry, securityConfig, env)
 }
 
 val objectMapper: ObjectMapper = jacksonObjectMapper().registerModule(JavaTimeModule())
@@ -43,12 +44,12 @@ const val SUBJECT_MDC_KEY = "subject"
 fun startApp(
     dataSource: DataSource,
     prometheusRegistry: PrometheusMeterRegistry,
+    securityConfig: SecurityConfig,
     env: Map<String, String>
 ): Thread {
     val txTemplate = TxTemplate(dataSource)
     kjørFlywayMigreringer(dataSource)
 
-    val securityConfig = SecurityConfig(issuer = "nav-no", audience = "feed-api-v2", secret = env.variable("PRIVATE_SECRET"))
     val accessManager = JavalinAccessManager(securityConfig, env)
 
     val tokenRepository = TokenRepository(txTemplate)
@@ -73,6 +74,12 @@ fun startApp(
     auth.setupRoutes(javalin)
     feedController.setupRoutes(javalin)
     javalin.after { _ -> MDC.remove(SUBJECT_MDC_KEY)}
+
+    Timer("DenylistRefreshTimer").scheduleAtFixedRate(
+        DenylistRefreshTask(securityConfig, tokenRepository),
+        0L,
+        1000 * 60 * 30 // Refresher denylist en gang hver halvtime
+    )
 
     return kafkaListener.startListener()
 }

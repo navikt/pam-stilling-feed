@@ -57,4 +57,10 @@ class TokenRepository(private val txTemplate: TxTemplate) {
                     setTimestamp(4, Timestamp.from(issuedAt))
                 }.executeUpdate()
         }
+
+    fun hentInvaliderteTokens(txContext: TxContext? = null) = txTemplate.doInTransaction(txContext) { ctx ->
+        ctx.connection().prepareStatement("SELECT jwt FROM token WHERE invalidated=true").executeQuery().use {
+            generateSequence { if (it.next()) it.getString(1) else null }.toList()
+        }
+    }
 }

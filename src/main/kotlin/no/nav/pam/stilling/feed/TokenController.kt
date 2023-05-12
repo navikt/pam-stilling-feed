@@ -1,6 +1,5 @@
 package no.nav.pam.stilling.feed
 
-import com.auth0.jwt.interfaces.Payload
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.javalin.Javalin
 import io.javalin.http.Context
@@ -112,13 +111,6 @@ class TokenController(private val securityConfig: SecurityConfig, private val to
         if (authHeader == null) {
             ctx.status(501)
             ctx.result("Missing Authorization header")
-        }
-    }
-
-    class DenylistVerifier(private val denylist: Map<String, Long>) {
-        fun isDenied(jwt: Payload): Boolean {
-            return (denylist[jwt.subject] == 0L ||
-                    denylist[jwt.subject] == jwt.issuedAt.time)
         }
     }
 

@@ -22,6 +22,8 @@ class SecurityConfig(private val issuer: String, private val audience: String, s
         }
     }
 
+    private val denylist: MutableList<String> = mutableListOf()
+
     private val algorithm = Algorithm.HMAC256(secret)
 
     private fun newHmacJwtVerifier(): JWTVerifier =
@@ -51,10 +53,20 @@ class SecurityConfig(private val issuer: String, private val audience: String, s
 
     private fun validerAccessToken(decodedJWT: DecodedJWT) = try {
         newHmacJwtVerifier().verify(decodedJWT)
-        true
+        if (isDenied(decodedJWT)) {
+            LOG.warn("Bruk av invalidert token - Subject: ${decodedJWT.subject}")
+            false
+        } else true
     } catch (e: Exception) {
+        LOG.error("Feil ved validering av token - Subject: ${decodedJWT.subject} - Error: $e")
         false
     }
+
+    fun updateDenylist(oppdatertDenylist: List<String>?) = oppdatertDenylist?.let {
+        denylist.apply { addAll(it) }.distinct()
+    }
+
+    private fun isDenied(jwt: DecodedJWT) = denylist.contains(jwt.token)
 }
 
 enum class Rolle : RouteRole { KONSUMENT, UNPROTECTED }
