@@ -7,6 +7,7 @@ import no.nav.pam.stilling.feed.dto.KonsumentDTO
 import no.nav.pam.stilling.feed.sikkerhet.Rolle
 import no.nav.pam.stilling.feed.sikkerhet.SecurityConfig
 import no.nav.pam.stilling.feed.sikkerhet.SecurityConfig.Companion.getBearerToken
+import no.nav.pam.stilling.feed.sikkerhet.SecurityConfig.Companion.getKid
 import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.time.LocalDate
@@ -56,27 +57,29 @@ class TokenController(private val securityConfig: SecurityConfig, private val to
 
     private fun nyttApiToken(ctx: Context) {
         try {
-            val subject = ctx.formParam("consumerId")?.let(::parseUuid)
+            val konsumentId = ctx.formParam("consumerId")?.let(::parseUuid)
             val expires = ctx.formParam("expires")?.let(::parseDateOptionallyTime)
                 ?.let { Date.from(it.atZone(ZoneId.of("Europe/Oslo")).toInstant()) }
 
-            if (subject == null) {
+            val konsument = konsumentId?.let { tokenService.finnKonsument(it) }
+
+            if (konsumentId == null) {
                 ctx.status(400)
                 ctx.contentType("text/plain")
                 ctx.result("Missing required parameter: consumerId")
-            } else if(tokenService.finnKonsument(subject) == null) {
+            } else if(konsument == null) {
                 ctx.status(404)
                 ctx.contentType("text/plain")
-                ctx.result("Consumer $subject not found")
+                ctx.result("Consumer $konsumentId not found")
             } else {
                 val issuedAt = Instant.now()
-                val newToken = securityConfig.newTokenFor(subject.toString(), issuedAt, expires)
-                tokenService.lagreNyttTokenForKonsument(subject, newToken, issuedAt)
+                val newToken = securityConfig.newTokenFor(konsument, issuedAt, expires)
+                tokenService.lagreNyttTokenForKonsument(konsumentId, newToken, issuedAt)
 
-                LOG.info("New token created for $subject")
+                LOG.info("New token created for $konsumentId")
                 ctx.status(200)
                 ctx.contentType("text/plain")
-                ctx.result("For subject: ${subject}\nAuthorization: Bearer ${newToken}\n")
+                ctx.result("For consumer: ${konsumentId}\nAuthorization: Bearer ${newToken}\n")
             }
         } catch (e: Exception) {
             ctx.status(400)
@@ -93,12 +96,13 @@ class TokenController(private val securityConfig: SecurityConfig, private val to
             if (decodedJWT != null) {
                 ctx.result("""
                     Token information:
-                    Algorithm:    ${decodedJWT.algorithm}
-                    Subject:      ${decodedJWT.subject}
-                    Issuer:       ${decodedJWT.issuer}
-                    Issued at:    ${decodedJWT.issuedAt}
-                    Expires:      ${decodedJWT.expiresAt ?: "not set"}
-                    Verification: ${if (erGyldig) "OK" else "Not OK"}
+                    Algorithm:      ${decodedJWT.algorithm}
+                    Subject:        ${decodedJWT.subject}
+                    Konsument ID:    ${decodedJWT.getKid()}
+                    Issuer:         ${decodedJWT.issuer}
+                    Issued at:      ${decodedJWT.issuedAt}
+                    Expires:        ${decodedJWT.expiresAt ?: "not set"}
+                    Verification:   ${if (erGyldig) "OK" else "Not OK"}
                 """.trimIndent())
                 ctx.contentType("text/plain")
                 ctx.status(200)

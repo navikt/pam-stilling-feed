@@ -39,7 +39,7 @@ val objectMapper: ObjectMapper = jacksonObjectMapper().registerModule(JavaTimeMo
     .disable(DeserializationFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE)
     .setTimeZone(TimeZone.getTimeZone("Europe/Oslo"))
 
-const val SUBJECT_MDC_KEY = "subject"
+const val KONSUMENT_ID_MDC_KEY = "konsument_id"
 
 fun startApp(
     dataSource: DataSource,
@@ -73,7 +73,7 @@ fun startApp(
     naisController.setupRoutes(javalin)
     auth.setupRoutes(javalin)
     feedController.setupRoutes(javalin)
-    javalin.after { _ -> MDC.remove(SUBJECT_MDC_KEY)}
+    javalin.after { _ -> MDC.remove(KONSUMENT_ID_MDC_KEY)}
 
     Timer("DenylistRefreshTimer").scheduleAtFixedRate(
         DenylistRefreshTask(securityConfig, tokenRepository),
@@ -113,7 +113,7 @@ fun startJavalin(
 
 fun logRequest(ctx: Context, ms: Float, log: Logger) {
     log.info("${ctx.method()} ${ctx.url()} ${ctx.statusCode()}",
-        kv("subject", ctx.attribute<String>(SUBJECT_MDC_KEY)),
+        kv("konsument_id", ctx.attribute<String>(KONSUMENT_ID_MDC_KEY)),
         kv("method", ctx.method()),
         kv("requested_uri", ctx.path()),
         kv("requested_url", ctx.url()),

@@ -8,6 +8,7 @@ import com.auth0.jwt.interfaces.DecodedJWT
 import io.javalin.http.Context
 import io.javalin.security.RouteRole
 import no.nav.pam.stilling.feed.TokenController
+import no.nav.pam.stilling.feed.dto.KonsumentDTO
 import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.util.*
@@ -20,6 +21,8 @@ class SecurityConfig(private val issuer: String, private val audience: String, s
             if (it.startsWith("bearer ", true)) it.substring("bearer ".length).trim()
             else null
         }
+
+        fun DecodedJWT.getKid(): String? = getClaim("kid").asString()
     }
 
     private val denylist: MutableList<String> = mutableListOf()
@@ -32,9 +35,10 @@ class SecurityConfig(private val issuer: String, private val audience: String, s
             .withAudience(audience)
             .build()
 
-    fun newTokenFor(subject: String, issuedAt: Instant = Instant.now(), expires: Date? = null): String =
+    fun newTokenFor(konsument: KonsumentDTO, issuedAt: Instant = Instant.now(), expires: Date? = null): String =
         JWT.create()
-            .withSubject(subject)
+            .withSubject(konsument.email)
+            .withClaim("kid", konsument.id.toString())
             .withIssuer(issuer)
             .withAudience(audience)
             .withIssuedAt(issuedAt)
@@ -54,11 +58,11 @@ class SecurityConfig(private val issuer: String, private val audience: String, s
     private fun validerAccessToken(decodedJWT: DecodedJWT) = try {
         newHmacJwtVerifier().verify(decodedJWT)
         if (isDenied(decodedJWT)) {
-            LOG.warn("Bruk av invalidert token - Subject: ${decodedJWT.subject}")
+            LOG.warn("Bruk av invalidert token - Konsument: ${decodedJWT.getKid()}")
             false
         } else true
     } catch (e: Exception) {
-        LOG.error("Feil ved validering av token - Subject: ${decodedJWT.subject} - Error: $e")
+        LOG.error("Feil ved validering av token - Konsument: ${decodedJWT.getKid()} - Error: $e")
         false
     }
 
