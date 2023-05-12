@@ -4,6 +4,7 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.micrometer.prometheus.PrometheusConfig
 import io.micrometer.prometheus.PrometheusMeterRegistry
+import no.nav.pam.stilling.feed.config.TxTemplate
 import org.testcontainers.containers.KafkaContainer
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
@@ -34,6 +35,10 @@ val dataSource = HikariConfig().apply {
     password = lokalPostgres.password
     validate()
 }.let(::HikariDataSource)
+
+internal fun TxTemplate.tømTabeller(vararg tabeller: String) = doInTransaction {ctx ->
+    tabeller.forEach { ctx.connection().prepareStatement("delete from $it").executeUpdate() }
+}
 
 private val env = mutableMapOf(
     "STILLING_INTERN_TOPIC" to "teampam.stilling-intern-1",

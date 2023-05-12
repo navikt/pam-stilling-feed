@@ -3,8 +3,8 @@ package no.nav.pam.stilling.feed.controllertest
 import no.nav.pam.stilling.feed.*
 import no.nav.pam.stilling.feed.config.TxTemplate
 import no.nav.pam.stilling.feed.dto.KonsumentDTO
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.net.URI
@@ -38,6 +38,11 @@ class TokenControllerTest {
         tokenRepository = TokenRepository(txTemplate)
         kjørFlywayMigreringer(ds)
         startLocalApplication()
+    }
+
+    @AfterEach
+    fun tømTabeller() {
+        txTemplate.tømTabeller("token", "feed_consumer")
     }
 
     @Test
