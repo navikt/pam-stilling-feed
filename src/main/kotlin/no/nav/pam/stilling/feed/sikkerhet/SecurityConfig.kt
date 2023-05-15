@@ -7,19 +7,25 @@ import com.auth0.jwt.exceptions.JWTDecodeException
 import com.auth0.jwt.interfaces.DecodedJWT
 import io.javalin.http.Context
 import io.javalin.security.RouteRole
-import no.nav.pam.stilling.feed.AuthController
+import no.nav.pam.stilling.feed.TokenController
+import no.nav.pam.stilling.feed.dto.KonsumentDTO
 import org.slf4j.LoggerFactory
+import java.time.Instant
 import java.util.*
 
 class SecurityConfig(private val issuer: String, private val audience: String, secret: String) {
     companion object {
-        private val LOG = LoggerFactory.getLogger(AuthController::class.java)
+        private val LOG = LoggerFactory.getLogger(TokenController::class.java)
 
         fun getBearerToken(ctx: Context): String? = ctx.header("Authorization")?.let {
             if (it.startsWith("bearer ", true)) it.substring("bearer ".length).trim()
             else null
         }
+
+        fun DecodedJWT.getKid(): String? = getClaim("kid").asString()
     }
+
+    private val denylist: MutableList<String> = mutableListOf()
 
     private val algorithm = Algorithm.HMAC256(secret)
 
@@ -29,12 +35,13 @@ class SecurityConfig(private val issuer: String, private val audience: String, s
             .withAudience(audience)
             .build()
 
-    fun newTokenFor(subject: String, expires: Date? = null): String =
+    fun newTokenFor(konsument: KonsumentDTO, issuedAt: Instant = Instant.now(), expires: Date? = null): String =
         JWT.create()
-            .withSubject(subject)
+            .withSubject(konsument.email)
+            .withClaim("kid", konsument.id.toString())
             .withIssuer(issuer)
             .withAudience(audience)
-            .withIssuedAt(Date())
+            .withIssuedAt(issuedAt)
             .withExpiresAt(expires)
             .sign(algorithm)
 
@@ -50,10 +57,20 @@ class SecurityConfig(private val issuer: String, private val audience: String, s
 
     private fun validerAccessToken(decodedJWT: DecodedJWT) = try {
         newHmacJwtVerifier().verify(decodedJWT)
-        true
+        if (isDenied(decodedJWT)) {
+            LOG.warn("Bruk av invalidert token - Konsument: ${decodedJWT.getKid()}")
+            false
+        } else true
     } catch (e: Exception) {
+        LOG.error("Feil ved validering av token - Konsument: ${decodedJWT.getKid()} - Error: $e")
         false
     }
+
+    fun updateDenylist(oppdatertDenylist: List<String>?) = oppdatertDenylist?.let {
+        denylist.apply { addAll(it) }.distinct()
+    }
+
+    private fun isDenied(jwt: DecodedJWT) = denylist.contains(jwt.token)
 }
 
 enum class Rolle : RouteRole { KONSUMENT, UNPROTECTED }

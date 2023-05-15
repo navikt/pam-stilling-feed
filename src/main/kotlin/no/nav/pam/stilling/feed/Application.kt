@@ -29,8 +29,9 @@ fun main() {
     val env = System.getenv()
     val prometheusRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
     val dataSource = DatabaseConfig(env, prometheusRegistry.prometheusRegistry).lagDatasource()
+    val securityConfig = SecurityConfig(issuer = "nav-no", audience = "feed-api-v2", secret = env.variable("PRIVATE_SECRET"))
 
-    startApp(dataSource, prometheusRegistry, env)
+    startApp(dataSource, prometheusRegistry, securityConfig, env)
 }
 
 val objectMapper: ObjectMapper = jacksonObjectMapper().registerModule(JavaTimeModule())
@@ -38,20 +39,22 @@ val objectMapper: ObjectMapper = jacksonObjectMapper().registerModule(JavaTimeMo
     .disable(DeserializationFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE)
     .setTimeZone(TimeZone.getTimeZone("Europe/Oslo"))
 
-const val SUBJECT_MDC_KEY = "subject"
+const val KONSUMENT_ID_MDC_KEY = "konsument_id"
 
 fun startApp(
     dataSource: DataSource,
     prometheusRegistry: PrometheusMeterRegistry,
+    securityConfig: SecurityConfig,
     env: Map<String, String>
 ): Thread {
     val txTemplate = TxTemplate(dataSource)
     kjørFlywayMigreringer(dataSource)
 
-    val securityConfig = SecurityConfig(issuer = "nav-no", audience = "feed-api-v2", secret = env.variable("PRIVATE_SECRET"))
     val accessManager = JavalinAccessManager(securityConfig, env)
 
-    val auth = AuthController(securityConfig)
+    val tokenRepository = TokenRepository(txTemplate)
+    val tokenService = TokenService(tokenRepository, txTemplate)
+    val auth = TokenController(securityConfig, tokenService)
     val healthService = HealthService()
     val kafkaConsumer = KafkaConfig(env).kafkaConsumer()
     val feedRepository = FeedRepository(txTemplate)
@@ -70,7 +73,13 @@ fun startApp(
     naisController.setupRoutes(javalin)
     auth.setupRoutes(javalin)
     feedController.setupRoutes(javalin)
-    javalin.after { _ -> MDC.remove(SUBJECT_MDC_KEY)}
+    javalin.after { _ -> MDC.remove(KONSUMENT_ID_MDC_KEY)}
+
+    Timer("DenylistRefreshTimer").scheduleAtFixedRate(
+        DenylistRefreshTask(securityConfig, tokenRepository),
+        0L,
+        1000 * 60 * 30 // Refresher denylist en gang hver halvtime
+    )
 
     return kafkaListener.startListener()
 }
@@ -104,7 +113,7 @@ fun startJavalin(
 
 fun logRequest(ctx: Context, ms: Float, log: Logger) {
     log.info("${ctx.method()} ${ctx.url()} ${ctx.statusCode()}",
-        kv("subject", ctx.attribute<String>(SUBJECT_MDC_KEY)),
+        kv("konsument_id", ctx.attribute<String>(KONSUMENT_ID_MDC_KEY)),
         kv("method", ctx.method()),
         kv("requested_uri", ctx.path()),
         kv("requested_url", ctx.url()),
