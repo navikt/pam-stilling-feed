@@ -35,6 +35,7 @@ class TokenController(private val securityConfig: SecurityConfig, private val to
         val success = tokenService.lagreKonsument(konsument)
 
         if (success != null && success > 0) {
+            LOG.info("New consumer created with ID ${konsument.id}")
             ctx.status(200)
             ctx.contentType("text/plain")
             ctx.result("""
@@ -47,10 +48,12 @@ class TokenController(private val securityConfig: SecurityConfig, private val to
                 Opprettet:      ${konsument.opprettet}
             """.trimIndent())
         } else {
+            LOG.error("Error when creating new consumer")
             ctx.status(500)
             ctx.result("Kunne ikke opprette ny konsument")
         }
     } catch (e: Exception) {
+        LOG.error("Error when creating new consumer", e)
         ctx.status(400)
         ctx.result("Bad input data")
     }
