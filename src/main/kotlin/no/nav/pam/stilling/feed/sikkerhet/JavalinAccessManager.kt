@@ -37,7 +37,9 @@ class JavalinAccessManager(private val securityConfig: SecurityConfig, env: Map<
         MDC.put(KONSUMENT_ID_MDC_KEY, konsument_id)
         ctx.attribute(KONSUMENT_ID_MDC_KEY, konsument_id)
 
-        if (parsetToken.decodedJWT == null || !parsetToken.erGyldig) {
+        if (!tilgangsstyringEnabled) {
+            LOG.info("Tilgangsstyring er skrudd av - Konsument: $konsument_id")
+        } else if (parsetToken.decodedJWT == null || !parsetToken.erGyldig) {
             LOG.info("Uautorisert request - Konsument: $konsument_id")
             throw UnauthorizedResponse()
         }

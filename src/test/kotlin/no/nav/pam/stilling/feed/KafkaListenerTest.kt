@@ -45,7 +45,10 @@ class KafkaListenerTest {
 
         kafkaProducer = KafkaProducer<String?, ByteArray?>(kafkaConfig)
         admin = Admin.create(mapOf(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG to lokalKafka.bootstrapServers))
-            .apply { createTopics(listOf(NewTopic(topic, 1, 1))).values()[topic]?.get() }
+            .apply {
+                if (listTopics().names().get().isEmpty())
+                    createTopics(listOf(NewTopic(topic, 1, 1))).values()[topic]?.get()
+            }
 
         startLocalApplication()
     }

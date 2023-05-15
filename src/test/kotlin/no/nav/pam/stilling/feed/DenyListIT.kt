@@ -5,6 +5,7 @@ import no.nav.pam.stilling.feed.*
 import no.nav.pam.stilling.feed.config.TxTemplate
 import no.nav.pam.stilling.feed.dto.AdDTO
 import no.nav.pam.stilling.feed.dto.KonsumentDTO
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
@@ -41,19 +42,24 @@ class DenyListIT {
         }
     }
 
+    @AfterEach
+    fun tømTabeller() {
+        txTemplate.tømTabeller("token", "feed_consumer")
+    }
+
     @Test
     fun denylistBlirOppdatert() {
         val konsument = KonsumentDTO(UUID.randomUUID(), "test", "test@test.test", "12344321", "Test Testersen")
         tokenService.lagreKonsument(konsument)
 
-        val førsteIssuedAt = Instant.now().minusSeconds(10)
-        val førsteToken = securityConfig.newTokenFor(konsument.id.toString(), førsteIssuedAt)
+        val førsteIssuedAt = Instant.now().minusSeconds(1000*60*60)
+        val førsteToken = securityConfig.newTokenFor(konsument, førsteIssuedAt)
         tokenService.lagreNyttTokenForKonsument(konsument.id, førsteToken, førsteIssuedAt)
 
         assertEquals(200, hentFeed(førsteToken).statusCode())
 
         val andreIssuedAt = Instant.now()
-        val andreToken = securityConfig.newTokenFor(konsument.id.toString(), andreIssuedAt)
+        val andreToken = securityConfig.newTokenFor(konsument, andreIssuedAt)
         tokenService.lagreNyttTokenForKonsument(konsument.id, andreToken, andreIssuedAt)
 
         assertEquals(200, hentFeed(førsteToken).statusCode())

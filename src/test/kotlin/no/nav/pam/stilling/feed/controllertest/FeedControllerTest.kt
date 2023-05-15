@@ -72,7 +72,7 @@ class FeedControllerTest {
     private fun getFeedPage(pageId: String = "", etag: String? = null, lastModified: String? = null) : Pair<Feed, HttpHeaders> {
         val request = HttpRequest.newBuilder()
             .uri(URI("$lokalUrlBase/api/v1/feed/$pageId"))
-            .GET()
+            .setHeader("Authorization", "Bearer $testToken")
             .build()
 
         val response = HttpClient.newBuilder()
@@ -85,7 +85,7 @@ class FeedControllerTest {
     private fun getFeedItem(itemId: String = "", etag: String? = null, lastModified: String? = null) : Pair<FeedEntryContent, HttpHeaders> {
         val request = HttpRequest.newBuilder()
             .uri(URI("$lokalUrlBase/api/v1/feedentry/$itemId"))
-            .GET()
+            .setHeader("Authorization", "Bearer $testToken")
             .build()
 
         val response = HttpClient.newBuilder()
