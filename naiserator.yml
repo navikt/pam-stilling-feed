@@ -47,13 +47,13 @@ spec:
         cascadingDelete: false
   kafka:
     pool: {{kafka_pool}}
+  envFrom:
+    - secret: pam-stilling-feed-secret
   env:
     - name: STILLING_INTERN_TOPIC
       value: teampam.stilling-intern-1
     - name: STILLING_INTERN_GROUP_ID
       value: StillingFeed2
-    - name: PRIVATE_SECRET
-      value: SuperHemmeligNøkkel
     - name: STILLING_URL_BASE
       value: "{{ stilling_url_base }}"
     - name: TILGANGSSTYRING_ENABLED
