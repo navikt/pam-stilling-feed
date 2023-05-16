@@ -9,6 +9,7 @@ import io.javalin.http.Context
 import io.javalin.security.RouteRole
 import no.nav.pam.stilling.feed.TokenController
 import no.nav.pam.stilling.feed.dto.KonsumentDTO
+import no.nav.pam.stilling.feed.sikkerhet.SecurityConfig.Companion.getKid
 import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.util.*
@@ -73,5 +74,7 @@ class SecurityConfig(private val issuer: String, private val audience: String, s
     private fun isDenied(jwt: DecodedJWT) = denylist.contains(jwt.token)
 }
 
-enum class Rolle : RouteRole { KONSUMENT, UNPROTECTED }
-data class ParsetJWT(val decodedJWT: DecodedJWT?, val erGyldig: Boolean)
+enum class Rolle : RouteRole { ADMIN, KONSUMENT, UNPROTECTED }
+data class ParsetJWT(val decodedJWT: DecodedJWT?, val erGyldig: Boolean) {
+    fun getKid() = decodedJWT?.getKid() ?: "UKJENT"
+}

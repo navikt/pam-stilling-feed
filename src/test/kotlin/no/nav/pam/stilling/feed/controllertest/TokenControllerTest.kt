@@ -117,6 +117,24 @@ class TokenControllerTest {
         }
     }
 
+    @Test
+    fun `Får ikke opprettet konsument eller token uten riktig subject i token`() {
+        var response = sendPostRequest(KONSUMENT_URL, konsumentJson, testToken)
+        assertEquals(401, response.statusCode())
+
+        response = sendPostRequest(TOKEN_URL, "consumerId=${UUID.randomUUID()}", testToken)
+        assertEquals(401, response.statusCode())
+    }
+
+    @Test
+    fun `Får ikke opprettet konsument eller token uten token`() {
+        var response = sendPostRequestUtenToken(KONSUMENT_URL, konsumentJson)
+        assertEquals(401, response.statusCode())
+
+        response = sendPostRequestUtenToken(TOKEN_URL, "consumerId=${UUID.randomUUID()}")
+        assertEquals(401, response.statusCode())
+    }
+
     val konsumentJson = """{
         "identifikator": "$IDENTIFIKATOR",
         "email": "$EMAIL",
@@ -124,14 +142,19 @@ class TokenControllerTest {
         "kontaktperson": "$KONTAKTPERSON"
     }""".trimIndent()
 
-    private fun sendPostRequest(url: String, body: String) = httpClient.send(
+    private fun sendPostRequest(url: String, body: String, token: String = testAdminToken) = httpClient.send(
         HttpRequest.newBuilder()
             .uri(URI(url))
             .POST(BodyPublishers.ofString(body))
+            .setHeader("Authorization", "Bearer $token")
             .build(),
         BodyHandlers.ofString()
     )
 
+    private fun sendPostRequestUtenToken(url: String, body: String) = httpClient.send(
+        HttpRequest.newBuilder().uri(URI(url)).POST(BodyPublishers.ofString(body)).build(),
+        BodyHandlers.ofString()
+    )
 
     private fun hentKonsumenter() = mutableListOf<KonsumentDTO>().also { konsumenter ->
         txTemplate.doInTransaction() { ctx ->

@@ -24,10 +24,9 @@ class TokenController(private val securityConfig: SecurityConfig, private val to
     }
 
     fun setupRoutes(javalin: Javalin) {
-        // TODO Burde vi ha noe auth på dette selv om det bare er tilgjengelig på internt nett?
-        javalin.get("/internal/api/tokenInfo", { ctx -> tokenInfo(ctx) }, Rolle.UNPROTECTED)
-        javalin.post("/internal/api/newApiToken", { ctx -> nyttApiToken(ctx) }, Rolle.UNPROTECTED)
-        javalin.post("/internal/api/newConsumer", { ctx -> nyKonsument(ctx) }, Rolle.UNPROTECTED)
+        javalin.get("/internal/api/tokenInfo", { ctx -> tokenInfo(ctx) }, Rolle.ADMIN)
+        javalin.post("/internal/api/newApiToken", { ctx -> nyttApiToken(ctx) }, Rolle.ADMIN)
+        javalin.post("/internal/api/newConsumer", { ctx -> nyKonsument(ctx) }, Rolle.ADMIN)
     }
 
     private fun nyKonsument(ctx: Context) = try {
@@ -101,7 +100,7 @@ class TokenController(private val securityConfig: SecurityConfig, private val to
                     Token information:
                     Algorithm:      ${decodedJWT.algorithm}
                     Subject:        ${decodedJWT.subject}
-                    Konsument ID:    ${decodedJWT.getKid()}
+                    Konsument ID:   ${decodedJWT.getKid()}
                     Issuer:         ${decodedJWT.issuer}
                     Issued at:      ${decodedJWT.issuedAt}
                     Expires:        ${decodedJWT.expiresAt ?: "not set"}
