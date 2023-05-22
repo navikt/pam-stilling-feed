@@ -54,7 +54,7 @@ fun startApp(
 
     val tokenRepository = TokenRepository(txTemplate)
     val tokenService = TokenService(tokenRepository, txTemplate)
-    val auth = TokenController(securityConfig, tokenService)
+    val tokenController = TokenController(securityConfig, tokenService)
     val healthService = HealthService()
     val kafkaConsumer = KafkaConfig(env).kafkaConsumer()
     val feedRepository = FeedRepository(txTemplate)
@@ -71,7 +71,7 @@ fun startApp(
     )
 
     naisController.setupRoutes(javalin)
-    auth.setupRoutes(javalin)
+    tokenController.setupRoutes(javalin)
     feedController.setupRoutes(javalin)
     javalin.after { _ -> MDC.remove(KONSUMENT_ID_MDC_KEY)}
 

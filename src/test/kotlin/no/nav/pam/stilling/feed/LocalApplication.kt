@@ -57,6 +57,7 @@ fun getLokalEnv() = env
 
 val securityConfig = SecurityConfig(issuer = "nav-test", audience = "feed-api-v2-test", secret = getLokalEnv()["PRIVATE_SECRET"]!!)
 val testToken = securityConfig.newTokenFor(KonsumentDTO(UUID.randomUUID(), "test", "test", "test", "test"))
+val testAdminToken = securityConfig.newTokenFor(KonsumentDTO(UUID.randomUUID(), "test", "admin@arbeidsplassen.nav.no", "test", "test"))
 
 val prometheusRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
 

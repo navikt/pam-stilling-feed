@@ -2,8 +2,9 @@ package no.nav.pam.stilling.feed.dto
 
 import java.sql.ResultSet
 import java.sql.Timestamp
+import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.UUID
+import java.util.*
 
 data class KonsumentDTO(
     val id: UUID = UUID.randomUUID(),
@@ -24,3 +25,5 @@ data class KonsumentDTO(
         )
     }
 }
+
+data class TokenRequestDTO(val konsumentId: UUID, val expires: LocalDate?)

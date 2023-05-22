@@ -12,7 +12,9 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.HttpResponse.BodyHandlers
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneId
 import java.util.*
 import kotlin.test.*
 
@@ -65,7 +67,7 @@ class TokenControllerTest {
         sendPostRequest(KONSUMENT_URL, konsumentJson);
         val konsumentFraDb = hentKonsumenter().first()
 
-        val tokenResponse = sendPostRequest(TOKEN_URL, "consumerId=${konsumentFraDb.id}")
+        val tokenResponse = sendPostRequest(TOKEN_URL, tokenRequestJson(konsumentFraDb.id))
         assertEquals(200, tokenResponse.statusCode())
 
         val jwt = tokenResponse.body().split(" ").last().trim()
@@ -79,16 +81,39 @@ class TokenControllerTest {
     }
 
     @Test
+    fun oppretterTokenMedExpiryForKonsument() {
+        sendPostRequest(KONSUMENT_URL, konsumentJson);
+        val konsumentFraDb = hentKonsumenter().first()
+
+        val tokenResponse = sendPostRequest(TOKEN_URL, tokenRequestJson(konsumentFraDb.id, "2050-01-01"))
+        assertEquals(200, tokenResponse.statusCode())
+
+        val jwt = tokenResponse.body().split(" ").last().trim()
+
+        val tokensFraDb = hentTokens()
+        val token = tokensFraDb.first()
+        assertEquals(1, tokensFraDb.size)
+        assertEquals(token.jwt, jwt)
+        assertEquals(token.consumerId, konsumentFraDb.id)
+        assertFalse(token.invalidated)
+        assertNull(token.invalidatedAt)
+
+        val (decodedJWT, erGyldig) = securityConfig.parseJWT(jwt)
+        assertTrue(erGyldig)
+        assertEquals(decodedJWT!!.expiresAt, Date.from(LocalDate.of(2050, 1,1).atStartOfDay(ZoneId.of("Europe/Oslo")).toInstant()))
+    }
+
+    @Test
     fun eldreTokensBlirInvalidertVedNyttToken() {
         sendPostRequest(KONSUMENT_URL, konsumentJson);
         val konsumentFraDb = hentKonsumenter().first()
 
-        sendPostRequest(TOKEN_URL, "consumerId=${konsumentFraDb.id}")
+        sendPostRequest(TOKEN_URL, tokenRequestJson(konsumentFraDb.id))
         val førsteToken = hentTokens().first()
         assertFalse(førsteToken.invalidated)
 
         Thread.sleep(1000L) // For å få ulikt sekund fra forrige token
-        sendPostRequest(TOKEN_URL, "consumerId=${konsumentFraDb.id}")
+        sendPostRequest(TOKEN_URL, tokenRequestJson(konsumentFraDb.id))
         val tokensEtterAndreKall = hentTokens()
         val andreToken = tokensEtterAndreKall.first { it.id != førsteToken.id}
 
@@ -101,7 +126,7 @@ class TokenControllerTest {
         assertNotEquals(førsteToken.jwt, andreToken.jwt)
 
         Thread.sleep(1000L) // For å få ulikt sekund fra forrige token
-        sendPostRequest(TOKEN_URL, "consumerId=${konsumentFraDb.id}")
+        sendPostRequest(TOKEN_URL, tokenRequestJson(konsumentFraDb.id))
         val tokensEtterTredjeKall = hentTokens()
         val tredjeToken = tokensEtterTredjeKall.first { it.id !in listOf(førsteToken.id, andreToken.id)}
 
@@ -117,6 +142,24 @@ class TokenControllerTest {
         }
     }
 
+    @Test
+    fun `Får ikke opprettet konsument eller token uten riktig subject i token`() {
+        var response = sendPostRequest(KONSUMENT_URL, konsumentJson, testToken)
+        assertEquals(401, response.statusCode())
+
+        response = sendPostRequest(TOKEN_URL, tokenRequestJson(UUID.randomUUID()), testToken)
+        assertEquals(401, response.statusCode())
+    }
+
+    @Test
+    fun `Får ikke opprettet konsument eller token uten token`() {
+        var response = sendPostRequestUtenToken(KONSUMENT_URL, konsumentJson)
+        assertEquals(401, response.statusCode())
+
+        response = sendPostRequestUtenToken(TOKEN_URL, tokenRequestJson(UUID.randomUUID()))
+        assertEquals(401, response.statusCode())
+    }
+
     val konsumentJson = """{
         "identifikator": "$IDENTIFIKATOR",
         "email": "$EMAIL",
@@ -124,14 +167,24 @@ class TokenControllerTest {
         "kontaktperson": "$KONTAKTPERSON"
     }""".trimIndent()
 
-    private fun sendPostRequest(url: String, body: String) = httpClient.send(
+    fun tokenRequestJson(konsumentId: UUID, exp: String? = null) = """{
+        "konsumentId": "$konsumentId",
+        "expires": ${exp?.let { "\"$it\"" }}
+    }""".trimIndent()
+
+    private fun sendPostRequest(url: String, body: String, token: String = testAdminToken) = httpClient.send(
         HttpRequest.newBuilder()
             .uri(URI(url))
             .POST(BodyPublishers.ofString(body))
+            .setHeader("Authorization", "Bearer $token")
             .build(),
         BodyHandlers.ofString()
     )
 
+    private fun sendPostRequestUtenToken(url: String, body: String) = httpClient.send(
+        HttpRequest.newBuilder().uri(URI(url)).POST(BodyPublishers.ofString(body)).build(),
+        BodyHandlers.ofString()
+    )
 
     private fun hentKonsumenter() = mutableListOf<KonsumentDTO>().also { konsumenter ->
         txTemplate.doInTransaction() { ctx ->
