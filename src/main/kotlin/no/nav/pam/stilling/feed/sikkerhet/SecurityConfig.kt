@@ -12,7 +12,6 @@ import no.nav.pam.stilling.feed.dto.KonsumentDTO
 import no.nav.pam.stilling.feed.sikkerhet.SecurityConfig.Companion.getKid
 import org.slf4j.LoggerFactory
 import java.time.Instant
-import java.util.*
 
 class SecurityConfig(private val issuer: String, private val audience: String, secret: String) {
     companion object {
@@ -36,7 +35,7 @@ class SecurityConfig(private val issuer: String, private val audience: String, s
             .withAudience(audience)
             .build()
 
-    fun newTokenFor(konsument: KonsumentDTO, issuedAt: Instant = Instant.now(), expires: Date? = null): String =
+    fun newTokenFor(konsument: KonsumentDTO, issuedAt: Instant = Instant.now(), expires: Instant? = null): String =
         JWT.create()
             .withSubject(konsument.email)
             .withClaim("kid", konsument.id.toString())

@@ -4,19 +4,14 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import io.javalin.Javalin
 import io.javalin.http.Context
 import no.nav.pam.stilling.feed.dto.KonsumentDTO
+import no.nav.pam.stilling.feed.dto.TokenRequestDTO
 import no.nav.pam.stilling.feed.sikkerhet.Rolle
 import no.nav.pam.stilling.feed.sikkerhet.SecurityConfig
 import no.nav.pam.stilling.feed.sikkerhet.SecurityConfig.Companion.getBearerToken
 import no.nav.pam.stilling.feed.sikkerhet.SecurityConfig.Companion.getKid
 import org.slf4j.LoggerFactory
 import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeFormatterBuilder
-import java.time.temporal.ChronoField
-import java.util.*
 
 class TokenController(private val securityConfig: SecurityConfig, private val tokenService: TokenService) {
     companion object {
@@ -59,23 +54,16 @@ class TokenController(private val securityConfig: SecurityConfig, private val to
 
     private fun nyttApiToken(ctx: Context) {
         try {
-            val konsumentId = ctx.formParam("consumerId")?.let(::parseUuid)
-            val expires = ctx.formParam("expires")?.let(::parseDateOptionallyTime)
-                ?.let { Date.from(it.atZone(ZoneId.of("Europe/Oslo")).toInstant()) }
+            val (konsumentId, expires) = objectMapper.readValue<TokenRequestDTO>(ctx.body())
+            val konsument = tokenService.finnKonsument(konsumentId)
 
-            val konsument = konsumentId?.let { tokenService.finnKonsument(it) }
-
-            if (konsumentId == null) {
-                ctx.status(400)
-                ctx.contentType("text/plain")
-                ctx.result("Missing required parameter: consumerId")
-            } else if(konsument == null) {
+            if(konsument == null) {
                 ctx.status(404)
                 ctx.contentType("text/plain")
                 ctx.result("Consumer $konsumentId not found")
             } else {
                 val issuedAt = Instant.now()
-                val newToken = securityConfig.newTokenFor(konsument, issuedAt, expires)
+                val newToken = securityConfig.newTokenFor(konsument, issuedAt, expires?.atStartOfDay(ZoneId.of("Europe/Oslo"))?.toInstant())
                 tokenService.lagreNyttTokenForKonsument(konsumentId, newToken, issuedAt)
 
                 LOG.info("New token created for $konsumentId")
@@ -117,25 +105,6 @@ class TokenController(private val securityConfig: SecurityConfig, private val to
         if (authHeader == null) {
             ctx.status(501)
             ctx.result("Missing Authorization header")
-        }
-    }
-
-    private fun parseUuid(s: String?) = try { UUID.fromString(s) } catch (_: Exception) { null }
-
-    private fun parseDateOptionallyTime(d: String): LocalDateTime? {
-        val dateTimeFormatter = DateTimeFormatterBuilder()
-            .appendOptional(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
-            .appendOptional(DateTimeFormatter.ISO_LOCAL_DATE)
-            .toFormatter()
-        return try {
-            val temporal = dateTimeFormatter.parse(d)
-            if (temporal.isSupported(ChronoField.HOUR_OF_DAY)) {
-                LocalDateTime.from(temporal)
-            } else {
-                LocalDate.from(temporal).atStartOfDay()
-            }
-        } catch (e: Exception) {
-            null
         }
     }
 }
