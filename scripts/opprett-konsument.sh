@@ -36,19 +36,19 @@ if [[ $ENV == "dev" && -z $PAM_STILLING_FEED_DEV_KEY ]]
     exit 1
 fi
 
-echo "Registrerer ny konsument av pam-stilling-feed i $env, fyll inn informasjon:"
+echo "Registrerer ny konsument av pam-stilling-feed i $ENV, fyll inn informasjon:"
 read -p " identifikator: " identifikator
 read -p " email: " email
 read -p " telefon: " telefon
 read -p " kontaktperson: " kontaktperson
 
 json='{ "identifikator": "'$identifikator'", "email": "'$email'", "telefon": "'$telefon'", "kontaktperson": "'$kontaktperson'" }'
-echo -e "\nDette vil lage en ny konsument i $env med følgende JSON:\n $json \n"
+echo -e "\nDette vil lage en ny konsument i $ENV med følgende JSON:\n $json \n"
 read -p "Er du sikker (Y/y for å fortsette)? " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]
 then
-  curl -POST -H "Authorization: Bearer `cat $TOKEN_PATH`" -H "Content-Type: application/json" -d "$json" "$URL"
+  curl -POST -H "Authorization: Bearer $(cat "$TOKEN_PATH")" -H "Content-Type: application/json" -d "$json" "$URL"
 else
   echo "Avbryter, lager ikke ny konsument"
 fi

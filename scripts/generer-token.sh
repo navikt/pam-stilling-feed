@@ -56,7 +56,7 @@ read -p "Er du sikker (Y/y for å fortsette)? " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]
 then
-  curl -POST -H "Authorization: Bearer `cat $TOKEN_PATH`" -H "Content-Type: application/json" -d "$json" "$URL"
+  curl -POST -H "Authorization: Bearer $(cat "$TOKEN_PATH")" -H "Content-Type: application/json" -d "$json" "$URL"
 else
   echo "Avbryter, lager ikke nytt token for konsument: $id"
 fi
