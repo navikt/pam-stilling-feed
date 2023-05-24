@@ -15,24 +15,20 @@ import java.net.http.HttpHeaders
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.util.*
+import kotlin.test.assertEquals
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class FeedControllerTest {
-    var feedRepository: FeedRepository? = null
-    var feedService: FeedService? = null
-    var txTemplate : TxTemplate? = null
+    private lateinit var feedRepository: FeedRepository
+    private lateinit var feedService: FeedService
+    private lateinit var txTemplate : TxTemplate
 
     @BeforeAll
     fun init() {
         val ds = dataSource
-
-//        val env = System.getenv()
-//        val prometheusRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
-//        val ds = DatabaseConfig(env, prometheusRegistry.prometheusRegistry).lagDatasource()
-
         txTemplate = TxTemplate(ds)
-        feedRepository = FeedRepository(txTemplate!!)
-        feedService = FeedService(feedRepository!!, txTemplate!!, objectMapper)
+        feedRepository = FeedRepository(txTemplate)
+        feedService = FeedService(feedRepository, txTemplate, objectMapper)
         kjørFlywayMigreringer(ds)
 
         startLocalApplication()
@@ -48,51 +44,44 @@ class FeedControllerTest {
                 )
             if (i % 7 == 0) ad = ad.copy(status = "INACTIVE")
             adIds.add(ad.uuid)
-            val adItem = feedService!!.lagreNyStillingsAnnonse(ad)
+            feedService.lagreNyStillingsAnnonse(ad)
         }
 
         Assertions.assertThat(adIds.size).isEqualTo(Feed.defaultPageSize*3 + 1)
 
         var feedPageResponse = getFeedPage()
+
+        val etag = feedPageResponse.second.firstValue("etag").get()
+        val lastModified = feedPageResponse.second.firstValue("last-modified").get()
+        val etagResponse = sendFeedRequest("$lokalUrlBase/api/v1/feed/${feedPageResponse.first.id}", etag, lastModified)
+        assertEquals(304, etagResponse.statusCode())
+
         feedPageResponse.first.items.forEach { adIds.remove(it.feed_entry.uuid) }
 
         while(feedPageResponse.first.next_id != null) {
             feedPageResponse = getFeedPage(feedPageResponse.first.next_id.toString())
-            feedPageResponse.first.items.forEach { f ->
-                val feedItem = getFeedItem(f.feed_entry.uuid)
-                //println(feedItem.first.json)
-            }
             feedPageResponse.first.items.forEach { adIds.remove(it.feed_entry.uuid) }
         }
-        Assertions.assertThat(adIds).isEmpty()
 
-        // TODO legg på test på last modified og etag
+        Assertions.assertThat(adIds).isEmpty()
     }
 
     private fun getFeedPage(pageId: String = "", etag: String? = null, lastModified: String? = null) : Pair<Feed, HttpHeaders> {
-        val request = HttpRequest.newBuilder()
-            .uri(URI("$lokalUrlBase/api/v1/feed/$pageId"))
-            .setHeader("Authorization", "Bearer $testToken")
-            .build()
-
-        val response = HttpClient.newBuilder()
-            .build()
-            .send(request, HttpResponse.BodyHandlers.ofString())
-
+        val response = sendFeedRequest("$lokalUrlBase/api/v1/feed/$pageId", etag, lastModified)
         val feed = objectMapper.readValue(response.body(), Feed::class.java)
         return Pair(feed, response.headers())
     }
-    private fun getFeedItem(itemId: String = "", etag: String? = null, lastModified: String? = null) : Pair<FeedEntryContent, HttpHeaders> {
+
+    private fun sendFeedRequest(url: String, etag: String? = null, lastModified: String? = null): HttpResponse<String> {
         val request = HttpRequest.newBuilder()
-            .uri(URI("$lokalUrlBase/api/v1/feedentry/$itemId"))
+            .uri(URI(url))
             .setHeader("Authorization", "Bearer $testToken")
-            .build()
 
-        val response = HttpClient.newBuilder()
-            .build()
-            .send(request, HttpResponse.BodyHandlers.ofString())
+        if (etag != null) request.setHeader("If-None-Match", etag)
+        if (lastModified != null) request.setHeader("If-Modified-Since", lastModified)
 
-        val feed = objectMapper.readValue(response.body(), FeedEntryContent::class.java)
-        return Pair(feed, response.headers())
+        return HttpClient.newBuilder()
+            .build()
+            .send(request.build(), HttpResponse.BodyHandlers.ofString())
     }
 }
