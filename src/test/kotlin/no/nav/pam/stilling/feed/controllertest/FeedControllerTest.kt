@@ -73,16 +73,15 @@ class FeedControllerTest {
     }
 
     private fun sendFeedRequest(url: String, etag: String? = null, lastModified: String? = null): HttpResponse<String> {
-        val request = HttpRequest.newBuilder().apply {
-            uri(URI(url))
-            setHeader("Authorization", "Bearer $testToken")
+        val request = HttpRequest.newBuilder()
+            .uri(URI(url))
+            .setHeader("Authorization", "Bearer $testToken")
 
-            if (etag != null) setHeader("If-None-Match", etag)
-            if (lastModified != null) setHeader("If-Modified-Since", lastModified)
-        }.build()
+        if (etag != null) request.setHeader("If-None-Match", etag)
+        if (lastModified != null) request.setHeader("If-Modified-Since", lastModified)
 
         return HttpClient.newBuilder()
             .build()
-            .send(request, HttpResponse.BodyHandlers.ofString())
+            .send(request.build(), HttpResponse.BodyHandlers.ofString())
     }
 }
