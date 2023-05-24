@@ -46,10 +46,10 @@ class FeedController(private val feedService: FeedService,  private val objectMa
         operationId = "feed",
         description = "Returns first page of the feed by default, or last if query param 'last' is provided",
         security = [OpenApiSecurity(name = "BearerAuth")],
-        queryParams = [OpenApiParam(name="last", description = "Signifies request for last (newest) page of the feed", required = false, allowEmptyValue = true)],
+        queryParams = [OpenApiParam(name="last", description = "Flag for requesting the last (newest) page of the feed", required = false, allowEmptyValue = true)],
         headers = [
-            OpenApiParam(name = "If-None-Match", description = "Entity tag - Specific version of a resource. Provided by response header If-None-Match", required = false, allowEmptyValue = true, type = UUID::class),
-            OpenApiParam(name = "If-Modified-Since", description = "Last-modified datetime in RFC 1123 format. Provided by response header If-Modified-Since", required = false, allowEmptyValue = true, type = String::class, example = "Thu, 31 Dec 1992 11:56:00 +0200")
+            OpenApiParam(name = "If-None-Match", description = "Entity tag - Specific version of a resource. Provided by response header ETag", required = false, allowEmptyValue = true, type = UUID::class),
+            OpenApiParam(name = "If-Modified-Since", description = "Last-modified datetime in RFC 1123 format. Provided by response header Last-Modified", required = false, allowEmptyValue = true, type = String::class, example = "Thu, 31 Dec 1992 11:56:00 +0200")
         ],
         responses = [
             OpenApiResponse(status = "200", description = "Feed page", content = [OpenApiContent(from = Feed::class)]),
