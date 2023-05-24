@@ -9,14 +9,19 @@ import io.javalin.Javalin
 import io.javalin.http.Context
 import io.javalin.json.JavalinJackson
 import io.javalin.micrometer.MicrometerPlugin
+import io.javalin.openapi.plugin.redoc.ReDocConfiguration
+import io.javalin.openapi.plugin.redoc.ReDocPlugin
+import io.javalin.openapi.plugin.swagger.SwaggerConfiguration
+import io.javalin.openapi.plugin.swagger.SwaggerPlugin
 import io.micrometer.prometheus.PrometheusConfig
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import net.logstash.logback.argument.StructuredArguments.kv
-import no.nav.pam.stilling.feed.sikkerhet.JavalinAccessManager
 import no.nav.pam.stilling.feed.config.DatabaseConfig
 import no.nav.pam.stilling.feed.config.KafkaConfig
 import no.nav.pam.stilling.feed.config.TxTemplate
 import no.nav.pam.stilling.feed.config.variable
+import no.nav.pam.stilling.feed.sikkerhet.JavalinAccessManager
+import no.nav.pam.stilling.feed.sikkerhet.Rolle
 import no.nav.pam.stilling.feed.sikkerhet.SecurityConfig
 import org.flywaydb.core.Flyway
 import org.slf4j.Logger
@@ -108,6 +113,17 @@ fun startJavalin(
         it.http.defaultContentType = "application/json"
         it.jsonMapper(jsonMapper)
         it.plugins.register(micrometerPlugin)
+
+        it.plugins.register(getOpenApiPlugin())
+        it.plugins.register(SwaggerPlugin(SwaggerConfiguration().apply {
+            roles = arrayOf(Rolle.UNPROTECTED)
+            documentationPath = "/api/openapi.json"
+        }))
+        it.plugins.register(ReDocPlugin(ReDocConfiguration().apply {
+            roles = arrayOf(Rolle.UNPROTECTED)
+            documentationPath = "/api/openapi.json"
+        }))
+
     }.start(port)
 }
 

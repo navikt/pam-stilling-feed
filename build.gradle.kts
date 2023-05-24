@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm") version "1.8.20"
+    kotlin("kapt") version "1.8.20"
     id("com.github.johnrengelman.shadow") version "8.1.1"
     application
 }
@@ -43,6 +44,12 @@ dependencies {
     implementation("org.apache.kafka:kafka-clients:3.4.0")
 
     implementation("no.nav.arbeid.pam:pam-styrk-yrkeskategori-mapper:1.20211115-2b77b5e0")
+
+    // OpenApi
+    kapt("io.javalin.community.openapi:openapi-annotation-processor:5.5.0-1")
+    implementation("io.javalin.community.openapi:javalin-openapi-plugin:5.5.0-1") // for /openapi route with JSON scheme
+    implementation("io.javalin.community.openapi:javalin-swagger-plugin:5.5.0-1") // for Swagger UI
+    implementation("io.javalin.community.openapi:javalin-redoc-plugin:5.5.0-1") // for ReDoc UI
 
     testImplementation(kotlin("test"))
     testImplementation("org.assertj:assertj-core:3.24.2")
