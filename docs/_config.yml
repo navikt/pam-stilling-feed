@@ -1,0 +1,21 @@
+title: Job vacancy feed
+description: Public feed of job vacancies on Arbeidsplassen.no
+baseurl: "/pam-stilling-feed"
+url: "https://navikt.github.io"
+domain: "navikt.github.io"
+show_downloads: false
+repository: "navikt/pam-stilling-feed"
+name: "Arbeidsplassen.no"
+atom_feed:
+  hide: true
+
+footer:
+  links:
+    - label: "GitHub"
+      icon: "fab fa-fw fa-github"
+      url: "https://github.com/navikt/pam-stilling-feed"
+
+remote_theme: "mmistakes/minimal-mistakes@4.24.0"
+plugins:
+  - jekyll-remote-theme # add this line to the plugins list if you already have one
+  - jekyll-include-cache

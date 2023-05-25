@@ -1,0 +1,30 @@
+name: Publish docs to GitHub Pages
+on:
+  push:
+    branches:
+      - main
+      - gh-pages-doc
+    paths:
+      - docs/**
+
+jobs:
+  jekyll:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/cache@v3
+        with:
+          path: vendor/bundle
+          key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile') }}
+          restore-keys: |
+            ${{ runner.os }}-gems-
+
+      - name: Insert public token
+        run: |
+          echo "\npublic_api_token: ${{ secrets.PUBLIC_API_TOKEN }}" >> ./docs/_config.yml
+
+      - uses: helaili/jekyll-action@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          jekyll_src: 'docs'

@@ -1,5 +1,7 @@
 package no.nav.pam.stilling.feed
 
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
 import io.javalin.openapi.BearerAuth
 import io.javalin.openapi.OpenApiContact
@@ -16,7 +18,8 @@ fun getOpenApiPlugin() = OpenApiPlugin(OpenApiPluginConfiguration()
     .withRoles(Rolle.UNPROTECTED)
     .withDocumentationPath("/api/openapi.json")
     .withDefinitionConfiguration { _: String, definition: DefinitionConfiguration ->
-        definition.withOpenApiInfo { openApiInfo: OpenApiInfo ->
+        definition
+            .withOpenApiInfo { openApiInfo: OpenApiInfo ->
                 openApiInfo.title = "Public feed of job vacancies on Arbeidsplassen.no"
                 openApiInfo.description = "OpenAPI specification for the public feed of job vacancies on Arbeidsplassen.no provided by the Norwegian Labour and Welfare Administration"
                 openApiInfo.termsOfService = "https://arbeidsplassen.nav.no/vilkar-api"
@@ -38,9 +41,15 @@ fun getOpenApiPlugin() = OpenApiPlugin(OpenApiPluginConfiguration()
             .withSecurity(SecurityComponentConfiguration().apply {
                 withSecurityScheme("BearerAuth", BearerAuth())
             })
-            .withDefinitionProcessor {content ->
+            .withDefinitionProcessor { content ->
                 // Javalin OpenApi støtter per nå ikke response-headers så vi må legge de på openApi-specen selv
                 setResponseHeadersDocumentation(content)
+
+                //  Javalin OpenApi tolker per nå ikke @JsonIgnore og @JsonProperty, må håndteres på egenhånd
+                removePropertiesFromSchema(content["components"]["schemas"]["Feed"], "etag", "lastModified")
+                renamePropertiesInSchema(content["components"]["schemas"]["FeedLine"], "feed_entry" to "_feed_entry")
+                renamePropertiesInSchema(content["components"]["schemas"]["FeedEntryContent"], "json" to "ad_content")
+
                 content.toPrettyString()
             }
     })
@@ -60,3 +69,20 @@ private fun setResponseHeadersDocumentation(content: ObjectNode) {
         }
     }
 }
+
+private fun removePropertiesFromSchema(schemaNode: JsonNode, vararg propsToRemove: String) =
+    propsToRemove.forEach { propToRemove ->
+        (schemaNode["properties"] as ObjectNode).remove(propToRemove)
+        schemaNode["required"].removeAll { it.toString().removeSurrounding("\"") == propToRemove }
+    }
+
+private fun renamePropertiesInSchema(schemaNode: JsonNode, vararg propsToRename: Pair<String, String>) =
+    propsToRename.forEach { (currentName, newName) ->
+        schemaNode["properties"].let {
+            (it as ObjectNode).set<ObjectNode>(newName, it[currentName])
+            it.remove(currentName)
+        }
+
+        schemaNode["required"].removeAll { it.toString().removeSurrounding("\"") == currentName }
+        (schemaNode["required"] as ArrayNode).add(newName)
+    }
