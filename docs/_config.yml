@@ -1,6 +1,5 @@
 title: Job vacancy feed
 description: Public feed of job vacancies on Arbeidsplassen.no
-baseurl: "/pam-stilling-feed"
 url: "https://navikt.github.io"
 domain: "navikt.github.io"
 show_downloads: false

@@ -23,9 +23,9 @@ There are two types of tokens, public and private. The public token may be revok
 The current public token is
 ```
 {% if site.public_api_token %}
-  {{site.public_api_token}}
+{{site.public_api_token}}
 {% else %}
-  placeholder
+placeholder
 {% endif %}
 ```
 
