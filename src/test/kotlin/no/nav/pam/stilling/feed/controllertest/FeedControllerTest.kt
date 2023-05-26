@@ -4,7 +4,6 @@ import no.nav.pam.stilling.feed.*
 import no.nav.pam.stilling.feed.config.TxTemplate
 import no.nav.pam.stilling.feed.dto.AdDTO
 import no.nav.pam.stilling.feed.dto.Feed
-import no.nav.pam.stilling.feed.dto.FeedEntryContent
 import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -16,6 +15,7 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.util.*
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class FeedControllerTest {
@@ -64,6 +64,16 @@ class FeedControllerTest {
         }
 
         Assertions.assertThat(adIds).isEmpty()
+    }
+
+    @Test
+    fun `Siste feedside har next_id og next_url lik null i respons`() {
+        val ad = objectMapper.readValue(javaClass.getResourceAsStream("/ad_dto.json"), AdDTO::class.java)
+        feedService.lagreNyStillingsAnnonse(ad)
+        val response = sendFeedRequest("$lokalUrlBase/api/v1/feed?last=true")
+        assertEquals(200, response.statusCode())
+        assertTrue(response.body().contains("\"next_url\":null"))
+        assertTrue(response.body().contains("\"next_id\":null"))
     }
 
     private fun getFeedPage(pageId: String = "", etag: String? = null, lastModified: String? = null) : Pair<Feed, HttpHeaders> {
