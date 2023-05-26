@@ -72,7 +72,7 @@ class TokenControllerTest {
 
         val jwt = tokenResponse.body().split(" ").last().trim()
         val tokensFraDb = hentTokens()
-        val token =  tokensFraDb.first()
+        val token = tokensFraDb.first()
         assertEquals(1, tokensFraDb.size)
         assertEquals(token.jwt, jwt)
         assertEquals(token.consumerId, konsumentFraDb.id)
@@ -115,7 +115,7 @@ class TokenControllerTest {
         Thread.sleep(1000L) // For å få ulikt sekund fra forrige token
         sendPostRequest(TOKEN_URL, tokenRequestJson(konsumentFraDb.id))
         val tokensEtterAndreKall = hentTokens()
-        val andreToken = tokensEtterAndreKall.first { it.id != førsteToken.id}
+        val andreToken = tokensEtterAndreKall.first { it.id != førsteToken.id }
 
         assertEquals(2, tokensEtterAndreKall.size)
         assertTrue(tokensEtterAndreKall.first { it.id == førsteToken.id }.invalidated)
@@ -128,7 +128,7 @@ class TokenControllerTest {
         Thread.sleep(1000L) // For å få ulikt sekund fra forrige token
         sendPostRequest(TOKEN_URL, tokenRequestJson(konsumentFraDb.id))
         val tokensEtterTredjeKall = hentTokens()
-        val tredjeToken = tokensEtterTredjeKall.first { it.id !in listOf(førsteToken.id, andreToken.id)}
+        val tredjeToken = tokensEtterTredjeKall.first { it.id !in listOf(førsteToken.id, andreToken.id) }
 
         assertEquals(3, tokensEtterTredjeKall.size)
         assertFalse(tredjeToken.invalidated)

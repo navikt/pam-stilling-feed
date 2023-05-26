@@ -52,7 +52,7 @@ class DenyListIT {
         val konsument = KonsumentDTO(UUID.randomUUID(), "test", "test@test.test", "12344321", "Test Testersen")
         tokenService.lagreKonsument(konsument)
 
-        val førsteIssuedAt = Instant.now().minusSeconds(1000*60*60)
+        val førsteIssuedAt = Instant.now().minusSeconds(1000 * 60 * 60)
         val førsteToken = securityConfig.newTokenFor(konsument, førsteIssuedAt)
         tokenService.lagreNyttTokenForKonsument(konsument.id, førsteToken, førsteIssuedAt)
 

@@ -5,7 +5,6 @@ import io.javalin.http.HttpStatus
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import io.prometheus.client.exporter.common.TextFormat
 import no.nav.pam.stilling.feed.sikkerhet.Rolle
-import org.slf4j.LoggerFactory
 import java.util.concurrent.atomic.AtomicInteger
 
 class NaisController(
@@ -28,10 +27,6 @@ class NaisController(
 
 class HealthService {
     private val unhealthyVotes = AtomicInteger(0)
-
     fun addUnhealthyVote() = unhealthyVotes.addAndGet(1)
-
-    fun unhealthyVotes() = unhealthyVotes.get()
-
     fun isHealthy() = unhealthyVotes.get() == 0
 }

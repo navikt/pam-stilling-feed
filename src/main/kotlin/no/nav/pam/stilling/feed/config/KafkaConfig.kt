@@ -41,8 +41,8 @@ class KafkaConfig(private val env: Map<String, String>) {
         return consumer
     }
     fun kafkaConsumerProperties(): Map<String, Any> {
-        val clientId: String = "PamStillingFeed"
-        val autoOffsetResetConfig: String = "earliest"
+        val clientId = "PamStillingFeed"
+        val autoOffsetResetConfig = "earliest"
 
         val props = mutableMapOf<String, Any>()
         props[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = env.variable("KAFKA_BROKERS")

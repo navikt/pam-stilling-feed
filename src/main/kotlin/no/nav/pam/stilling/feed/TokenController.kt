@@ -57,7 +57,7 @@ class TokenController(private val securityConfig: SecurityConfig, private val to
             val (konsumentId, expires) = objectMapper.readValue<TokenRequestDTO>(ctx.body())
             val konsument = tokenService.finnKonsument(konsumentId)
 
-            if(konsument == null) {
+            if (konsument == null) {
                 ctx.status(404)
                 ctx.contentType("text/plain")
                 ctx.result("Consumer $konsumentId not found")

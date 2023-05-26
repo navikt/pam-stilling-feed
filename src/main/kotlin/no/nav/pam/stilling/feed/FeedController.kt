@@ -13,7 +13,7 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 
-class FeedController(private val feedService: FeedService,  private val objectMapper: ObjectMapper) {
+class FeedController(private val feedService: FeedService, private val objectMapper: ObjectMapper) {
     companion object {
         private val LOG = LoggerFactory.getLogger(FeedRepository::class.java)
         const val defaultOutboundPageSize: Int = 1000
@@ -73,8 +73,7 @@ class FeedController(private val feedService: FeedService,  private val objectMa
             hentFeed(ctx, feedPageItem.id.toString(), pageSize)
     }
 
-    private fun toInt(s: String?, defaultValue : Int):Int =
-        s?.toIntOrNull() ?: defaultValue
+    private fun toInt(s: String?, defaultValue: Int): Int = s?.toIntOrNull() ?: defaultValue
 
     @OpenApi(
         path = "/api/v1/feed/<feedPageId>",
@@ -99,9 +98,10 @@ class FeedController(private val feedService: FeedService,  private val objectMa
         val etag = ctx.header("If-None-Match")
         val ifModifiedSinceStr = ctx.header("If-Modified-Since")
 
-        val feed = feedService.hentFeedHvis(id = UUID.fromString(feedPageId), etag = etag,
-            sistEndret = strToZonedDateTime(ifModifiedSinceStr),
-            pageSize = pageSize
+        val feed = feedService.hentFeedHvis(
+            id = UUID.fromString(feedPageId),
+            etag = etag,
+            sistEndret = strToZonedDateTime(ifModifiedSinceStr)
         )
 
         if (feed == null) {
@@ -143,7 +143,7 @@ class FeedController(private val feedService: FeedService,  private val objectMa
         }
     }
 
-    private fun strToZonedDateTime(zt: String?) : ZonedDateTime? {
+    private fun strToZonedDateTime(zt: String?): ZonedDateTime? {
         zt?.let {
             try {
                 return ZonedDateTime.parse(it, DateTimeFormatter.RFC_1123_DATE_TIME)
@@ -154,6 +154,5 @@ class FeedController(private val feedService: FeedService,  private val objectMa
         return null
     }
 
-    private fun zonedDatetimeToStr(zt: ZonedDateTime): String =
-        zt.format(DateTimeFormatter.RFC_1123_DATE_TIME)
+    private fun zonedDatetimeToStr(zt: ZonedDateTime): String = zt.format(DateTimeFormatter.RFC_1123_DATE_TIME)
 }

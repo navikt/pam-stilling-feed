@@ -39,7 +39,7 @@ val dataSource = HikariConfig().apply {
     validate()
 }.let(::HikariDataSource)
 
-internal fun TxTemplate.tømTabeller(vararg tabeller: String) = doInTransaction {ctx ->
+internal fun TxTemplate.tømTabeller(vararg tabeller: String) = doInTransaction { ctx ->
     tabeller.forEach { ctx.connection().prepareStatement("delete from $it").executeUpdate() }
 }
 

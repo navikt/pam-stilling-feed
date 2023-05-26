@@ -45,7 +45,6 @@ class SecurityConfig(private val issuer: String, private val audience: String, s
             .withExpiresAt(expires)
             .sign(algorithm)
 
-
     fun parseJWT(token: String) =
         try {
             val decoded = JWT.decode(token)
@@ -74,6 +73,7 @@ class SecurityConfig(private val issuer: String, private val audience: String, s
 }
 
 enum class Rolle : RouteRole { ADMIN, KONSUMENT, UNPROTECTED }
+
 data class ParsetJWT(val decodedJWT: DecodedJWT?, val erGyldig: Boolean) {
     fun getKid() = decodedJWT?.getKid() ?: "UKJENT"
 }

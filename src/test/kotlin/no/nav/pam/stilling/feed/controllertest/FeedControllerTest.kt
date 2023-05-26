@@ -34,24 +34,21 @@ class FeedControllerTest {
         feedRepository = FeedRepository(txTemplate)
         feedService = FeedService(feedRepository, txTemplate, objectMapper)
         kjørFlywayMigreringer(ds)
-
         startLocalApplication()
     }
 
     @Test
     fun skalLagreOgHenteFeedSider() {
         val adIds = mutableListOf<String>()
-        for (i in 1..(Feed.defaultPageSize*3)+1) {
+        for (i in 1..(Feed.defaultPageSize * 3) + 1) {
             var ad = objectMapper.readValue(javaClass.getResourceAsStream("/ad_dto.json"), AdDTO::class.java)
-                .copy(uuid = UUID.randomUUID().toString(),
-                    title =  "Annonse #$i"
-                )
+                .copy(uuid = UUID.randomUUID().toString(), title = "Annonse #$i")
             if (i % 7 == 0) ad = ad.copy(status = "INACTIVE")
             adIds.add(ad.uuid)
             feedService.lagreNyStillingsAnnonse(ad)
         }
 
-        Assertions.assertThat(adIds.size).isEqualTo(Feed.defaultPageSize*3 + 1)
+        Assertions.assertThat(adIds.size).isEqualTo(Feed.defaultPageSize * 3 + 1)
 
         var feedPageResponse = getFeedPage()
 
@@ -62,7 +59,7 @@ class FeedControllerTest {
 
         feedPageResponse.first.items.forEach { adIds.remove(it.feed_entry.uuid) }
 
-        while(feedPageResponse.first.next_id != null) {
+        while (feedPageResponse.first.next_id != null) {
             feedPageResponse = getFeedPage(feedPageResponse.first.next_id.toString())
             feedPageResponse.first.items.forEach { adIds.remove(it.feed_entry.uuid) }
         }
@@ -95,7 +92,7 @@ class FeedControllerTest {
 
         for (i in 0L until 100L step 20) {
             val updatedSince = updatedBase.plusDays(i)
-            val expectedUpdated = updatedBase.plusDays(i+1)
+            val expectedUpdated = updatedBase.plusDays(i + 1)
             val page = getFeedPage(lastModified = formatLocalDatetime(updatedSince)).first
 
             assertEquals("Annonse oppdatert $expectedUpdated", page.items.first().title)
@@ -112,16 +109,12 @@ class FeedControllerTest {
     }
 
     private fun sendFeedRequest(url: String, etag: String? = null, lastModified: String? = null): HttpResponse<String> {
-        val request = HttpRequest.newBuilder()
-            .uri(URI(url))
-            .setHeader("Authorization", "Bearer $testToken")
+        val request = HttpRequest.newBuilder().uri(URI(url)).setHeader("Authorization", "Bearer $testToken")
 
         if (etag != null) request.setHeader("If-None-Match", etag)
         if (lastModified != null) request.setHeader("If-Modified-Since", lastModified)
 
-        return HttpClient.newBuilder()
-            .build()
-            .send(request.build(), HttpResponse.BodyHandlers.ofString())
+        return HttpClient.newBuilder().build().send(request.build(), HttpResponse.BodyHandlers.ofString())
     }
 
     private fun formatLocalDatetime(datetime: LocalDateTime) =
@@ -129,9 +122,9 @@ class FeedControllerTest {
 
     private fun oppdaterSistEndretIDatabase(sistEndret: LocalDateTime, id: UUID) = txTemplate.doInTransaction { ctx ->
         ctx.connection().prepareStatement("update feed_page_item set sist_endret = ? where feed_item_id = ?").apply {
-                setTimestamp(1, Timestamp(sistEndret.toZonedDateTime().toInstant().toEpochMilli()))
-                setObject(2, id)
-            }.executeUpdate()
+            setTimestamp(1, Timestamp(sistEndret.toZonedDateTime().toInstant().toEpochMilli()))
+            setObject(2, id)
+        }.executeUpdate()
     }
 
     private fun LocalDateTime.toZonedDateTime() = atZone(ZoneId.of("Europe/Oslo"))

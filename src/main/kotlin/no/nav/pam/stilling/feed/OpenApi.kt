@@ -13,7 +13,6 @@ import io.javalin.openapi.plugin.OpenApiPluginConfiguration
 import io.javalin.openapi.plugin.SecurityComponentConfiguration
 import no.nav.pam.stilling.feed.sikkerhet.Rolle
 
-
 fun getOpenApiPlugin() = OpenApiPlugin(OpenApiPluginConfiguration()
     .withRoles(Rolle.UNPROTECTED)
     .withDocumentationPath("/api/openapi.json")

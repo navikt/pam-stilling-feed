@@ -27,7 +27,7 @@ class TokenRepository(private val txTemplate: TxTemplate) {
         }
 
 
-    fun hentKonsument(id: UUID, txContext : TxContext? = null) =
+    fun hentKonsument(id: UUID, txContext: TxContext? = null) =
         txTemplate.doInTransaction(txContext) { ctx ->
             ctx.connection()
                 .prepareStatement("SELECT * FROM feed_consumer WHERE id = ?")

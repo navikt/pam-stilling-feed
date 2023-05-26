@@ -2,7 +2,6 @@ package no.nav.pam.stilling.feed.dto
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import java.time.LocalDateTime
-import java.util.*
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class AdDTO(
@@ -52,10 +51,10 @@ data class AdministrationDTO(
 data class CategoryDTO (
     val id: Long?,
     val code: String,
-    var categoryType: String,
-    var name: String,
-    var description: String? = null,
-    var parentId: Long? = null
+    val categoryType: String,
+    val name: String,
+    val description: String? = null,
+    val parentId: Long? = null
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -66,7 +65,7 @@ data class CompanyDTO (
     val createdBy: String?,
     val updated: LocalDateTime = LocalDateTime.now(),
     val updatedBy: String? = null,
-    val mediaList: MutableList<MediaDTO>? = mutableListOf<MediaDTO>(),
+    val mediaList: MutableList<MediaDTO>? = mutableListOf(),
     val contactList: MutableList<ContactDTO> = mutableListOf(),
     val location: LocationDTO? = null,
     val locationList: MutableList<LocationDTO> = mutableListOf(),
@@ -94,15 +93,15 @@ data class ContactDTO (
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class LocationDTO (
-    var address: String? = null,
-    var postalCode: String? = null,
-    var county: String? = null,
-    var municipal: String? = null,
-    var municipalCode: String? = null,
-    var city: String? = null,
-    var country: String? = null,
-    var latitude: String? = null,
-    var longitude: String? = null
+    val address: String? = null,
+    val postalCode: String? = null,
+    val county: String? = null,
+    val municipal: String? = null,
+    val municipalCode: String? = null,
+    val city: String? = null,
+    val country: String? = null,
+    val latitude: String? = null,
+    val longitude: String? = null
 )
 
 /**
@@ -112,6 +111,6 @@ data class LocationDTO (
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class MediaDTO (
     val id: Long?,
-    var filename: String,
-    var mediaLink:  String? = null
+    val filename: String,
+    val mediaLink:  String? = null
 )

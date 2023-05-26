@@ -67,9 +67,10 @@ fun startApp(
         env["STILLING_URL_BASE"] ?: "https://arbeidsplassen.nav.no/stillinger/stilling")
     val feedController = FeedController(feedService, objectMapper)
     val naisController = NaisController(healthService, prometheusRegistry)
-    val kafkaListener = KafkaStillingListener(kafkaConsumer, feedService, objectMapper, txTemplate, healthService)
+    val kafkaListener = KafkaStillingListener(kafkaConsumer, feedService, healthService)
 
-    val javalin = startJavalin(port = 8080,
+    val javalin = startJavalin(
+        port = 8080,
         jsonMapper = JavalinJackson(objectMapper),
         meterRegistry = prometheusRegistry,
         accessManager = accessManager
@@ -78,7 +79,7 @@ fun startApp(
     naisController.setupRoutes(javalin)
     tokenController.setupRoutes(javalin)
     feedController.setupRoutes(javalin)
-    javalin.after { _ -> MDC.remove(KONSUMENT_ID_MDC_KEY)}
+    javalin.after { _ -> MDC.remove(KONSUMENT_ID_MDC_KEY) }
 
     Timer("DenylistRefreshTimer").scheduleAtFixedRate(
         DenylistRefreshTask(securityConfig, tokenRepository),
@@ -107,9 +108,10 @@ fun startJavalin(
     val micrometerPlugin = MicrometerPlugin.create { micrometerConfig ->
         micrometerConfig.registry = meterRegistry
     }
-    return Javalin.create{
+
+    return Javalin.create {
         it.accessManager(accessManager)
-        it.requestLogger.http {ctx, ms -> logRequest(ctx, ms, requestLogger)}
+        it.requestLogger.http { ctx, ms -> logRequest(ctx, ms, requestLogger) }
         it.http.defaultContentType = "application/json"
         it.jsonMapper(jsonMapper)
         it.plugins.register(micrometerPlugin)
@@ -123,17 +125,18 @@ fun startJavalin(
             roles = arrayOf(Rolle.UNPROTECTED)
             documentationPath = "/api/openapi.json"
         }))
-
     }.start(port)
 }
 
 fun logRequest(ctx: Context, ms: Float, log: Logger) {
-    log.info("${ctx.method()} ${ctx.url()} ${ctx.statusCode()}",
+    log.info(
+        "${ctx.method()} ${ctx.url()} ${ctx.statusCode()}",
         kv("konsument_id", ctx.attribute<String>(KONSUMENT_ID_MDC_KEY)),
         kv("method", ctx.method()),
         kv("requested_uri", ctx.path()),
         kv("requested_url", ctx.url()),
         kv("protocol", ctx.protocol()),
         kv("status_code", ctx.statusCode()),
-        kv("elapsed_ms", "$ms"))
+        kv("elapsed_ms", "$ms")
+    )
 }

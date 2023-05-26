@@ -70,8 +70,8 @@ class KafkaListenerTest {
         publiserTilKafka()
         Assertions.assertThat(adIds.size).isEqualTo(Feed.defaultPageSize * 3 + 1)
 
-        admin.describeTopics(listOf(topic)).allTopicNames().get().forEach{println(it)}
-        admin.listConsumerGroups().all().get().forEach{println(it)}
+        admin.describeTopics(listOf(topic)).allTopicNames().get().forEach { println(it) }
+        admin.listConsumerGroups().all().get().forEach { println(it) }
 
         var maxAntallForsøk = 2
         var ad: FeedItem? = null
