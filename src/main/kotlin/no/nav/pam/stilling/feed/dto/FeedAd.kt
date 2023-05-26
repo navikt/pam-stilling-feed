@@ -182,7 +182,7 @@ data class Feed(val version: String = "1.0",
                 val title: String = "Stillingsfeeden fra arbeidsplassen.no",
                 val home_page_url: String = "https://arbeidsplassen.nav.no",
                 val feed_url: String = "https://arbeidsplassen.nav.no/stillinger-feed",
-                val description: String = "Feed med stillinger fra arbeidsplassen.no - Norges største oversikt over utlyste stillinger",
+                val description: String = "Feed med stillinger fra arbeidsplassen.no - En av Norges største oversikter over utlyste stillinger",
                 @JsonInclude(JsonInclude.Include.ALWAYS)
                 val next_url: String?,
                 @JsonIgnore
