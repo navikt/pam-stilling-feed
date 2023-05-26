@@ -5,6 +5,7 @@ import no.nav.pam.stilling.feed.config.TxTemplate
 import no.nav.pam.stilling.feed.dto.Feed
 import no.nav.pam.stilling.feed.dto.FeedItem
 import no.nav.pam.stilling.feed.dto.FeedPageItem
+import no.nav.pam.stilling.feed.dto.KonsumentDTO
 import org.slf4j.LoggerFactory
 import java.sql.Timestamp
 import java.time.ZoneId
@@ -150,8 +151,7 @@ class FeedRepository(private val txTemplate: TxTemplate) {
                 where seq_no in (select min(f2.seq_no) from feed_page_item f2)
             """.trimIndent()
             val c = ctx.connection()
-            c.prepareStatement(sql).apply {
-            }.use { statement ->
+            c.prepareStatement(sql).use { statement ->
                 val resultSet = statement.executeQuery()
                 if (!resultSet.next())
                     return@doInTransaction null
@@ -168,8 +168,7 @@ class FeedRepository(private val txTemplate: TxTemplate) {
                 where seq_no in (select max(f2.seq_no) from feed_page_item f2)
             """.trimIndent()
             val c = ctx.connection()
-            c.prepareStatement(sql).apply {
-            }.use { statement ->
+            c.prepareStatement(sql).use { statement ->
                 val resultSet = statement.executeQuery()
                 if (!resultSet.next())
                     return@doInTransaction null
@@ -178,4 +177,17 @@ class FeedRepository(private val txTemplate: TxTemplate) {
         }
     }
 
+    fun hentFørsteSideNyereEnn(cutoff: ZonedDateTime, txContext : TxContext? = null) = txTemplate.doInTransaction(txContext) {ctx ->
+        val sql = """
+            select id, sist_endret, seq_no, status, title, business_name, municipal, feed_item_id
+            from feed_page_item
+            where seq_no in (select min(f2.seq_no) from feed_page_item f2 where sist_endret > ?)
+        """.trimIndent()
+
+        ctx.connection()
+            .prepareStatement(sql)
+            .apply { setTimestamp(1, Timestamp(cutoff.toInstant().toEpochMilli())) }
+            .executeQuery()
+            .takeIf { it.next() }?.let { FeedPageItem.fraDatabase(it) }
+    }
 }

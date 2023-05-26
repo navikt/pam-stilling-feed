@@ -6,17 +6,17 @@ import java.util.*
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class AdDTO(
-        val id: Long?,
-        val uuid: String,
-        val created: LocalDateTime = LocalDateTime.now(),
-        val createdBy: String?,
-        val updated: LocalDateTime = LocalDateTime.now(),
-        val updatedBy: String? = null,
-        val mediaList: MutableList<MediaDTO>? = mutableListOf<MediaDTO>(),
-        val contactList: MutableList<ContactDTO> = mutableListOf(),
-        val location: LocationDTO? = null,
-        val locationList: MutableList<LocationDTO> = mutableListOf(),
-        val properties: MutableMap<String, String> = mutableMapOf(),
+    val id: Long?,
+    val uuid: String,
+    val created: LocalDateTime = LocalDateTime.now(),
+    val createdBy: String?,
+    val updated: LocalDateTime = LocalDateTime.now(),
+    val updatedBy: String? = null,
+    val mediaList: MutableList<MediaDTO>? = mutableListOf(),
+    val contactList: MutableList<ContactDTO> = mutableListOf(),
+    val location: LocationDTO? = null,
+    val locationList: MutableList<LocationDTO> = mutableListOf(),
+    val properties: MutableMap<String, String> = mutableMapOf(),
 
     val title: String? = null,
     val status: String? = null,
@@ -33,9 +33,9 @@ data class AdDTO(
     val businessName: String? = null,
 
     // Meta fields not part of core ad data model
-    val isFirstPublished : Boolean = false, // Set to true by API user when an ad is published the first time
-    val isDeactivatedByExpiry :Boolean = false,
-    val isActivationOnPublishingDate : Boolean = false
+    val isFirstPublished: Boolean = false, // Set to true by API user when an ad is published the first time
+    val isDeactivatedByExpiry: Boolean = false,
+    val isActivationOnPublishingDate: Boolean = false
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
