@@ -59,7 +59,13 @@ class FeedController(private val feedService: FeedService,  private val objectMa
     )
     fun hentFeed(ctx: Context, pageSize: Int = defaultOutboundPageSize) {
         val sisteSide = ctx.queryParam("last")
-        val feedPageItem = if (sisteSide != null) feedService.hentSisteSide() else feedService.hentFørsteSide()
+        val ifModifiedSince = strToZonedDateTime(ctx.header("If-Modified-Since"))
+
+        val feedPageItem =
+            if (sisteSide != null) feedService.hentSisteSide()
+            else if (ifModifiedSince != null) feedService.hentFørsteSideNyereEnn(ifModifiedSince)
+            else feedService.hentFørsteSide()
+
         if (feedPageItem == null) {
             LOG.warn("Kunne ikke finne feedPageItem - Konsument: ${hentKonsumentId()}")
             ctx.status(404)

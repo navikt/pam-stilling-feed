@@ -13,6 +13,10 @@ import java.net.http.HttpClient
 import java.net.http.HttpHeaders
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
+import java.sql.Timestamp
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.*
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -76,6 +80,31 @@ class FeedControllerTest {
         assertTrue(response.body().contains("\"next_id\":null"))
     }
 
+    @Test
+    fun `Henter første side oppdatert etter If-Modified-Since dersom page ID ikke er gitt`() {
+        txTemplate.tømTabeller("feed_page_item")
+        val adSource = objectMapper.readValue(javaClass.getResourceAsStream("/ad_dto.json"), AdDTO::class.java)
+        val updatedBase = LocalDateTime.of(2018, 1, 1, 12, 0, 0, 0)
+
+        for (i in (0L..100L)) {
+            val updatedAt = updatedBase.plusDays(i)
+            val uuid = UUID.randomUUID()
+            feedService.lagreNyStillingsAnnonse(adSource.copy(uuid = uuid.toString(), title = "Annonse oppdatert $updatedAt", updated = updatedAt))
+            oppdaterSistEndretIDatabase(updatedAt, uuid)
+        }
+
+        for (i in 0L until 100L step 20) {
+            val updatedSince = updatedBase.plusDays(i)
+            val expectedUpdated = updatedBase.plusDays(i+1)
+            val page = getFeedPage(lastModified = formatLocalDatetime(updatedSince)).first
+
+            assertEquals("Annonse oppdatert $expectedUpdated", page.items.first().title)
+            assertEquals(expectedUpdated, page.items.first().date_modified?.toLocalDateTime())
+        }
+
+        txTemplate.tømTabeller("feed_page_item")
+    }
+
     private fun getFeedPage(pageId: String = "", etag: String? = null, lastModified: String? = null) : Pair<Feed, HttpHeaders> {
         val response = sendFeedRequest("$lokalUrlBase/api/v1/feed/$pageId", etag, lastModified)
         val feed = objectMapper.readValue(response.body(), Feed::class.java)
@@ -94,4 +123,16 @@ class FeedControllerTest {
             .build()
             .send(request.build(), HttpResponse.BodyHandlers.ofString())
     }
+
+    private fun formatLocalDatetime(datetime: LocalDateTime) =
+        datetime.toZonedDateTime().format(DateTimeFormatter.RFC_1123_DATE_TIME)
+
+    private fun oppdaterSistEndretIDatabase(sistEndret: LocalDateTime, id: UUID) = txTemplate.doInTransaction { ctx ->
+        ctx.connection().prepareStatement("update feed_page_item set sist_endret = ? where feed_item_id = ?").apply {
+                setTimestamp(1, Timestamp(sistEndret.toZonedDateTime().toInstant().toEpochMilli()))
+                setObject(2, id)
+            }.executeUpdate()
+    }
+
+    private fun LocalDateTime.toZonedDateTime() = atZone(ZoneId.of("Europe/Oslo"))
 }

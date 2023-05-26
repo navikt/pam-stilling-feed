@@ -144,4 +144,9 @@ class FeedService(private val feedRepository: FeedRepository,
             return@doInTransaction feedRepository.hentSisteSide(ctx)
         }
     }
+
+    fun hentFørsteSideNyereEnn(cutoff: ZonedDateTime, txContext: TxContext? = null) =
+        txTemplate.doInTransaction(txContext) { ctx ->
+            feedRepository.hentFørsteSideNyereEnn(cutoff, ctx)
+        }
 }
