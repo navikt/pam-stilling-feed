@@ -183,12 +183,14 @@ data class Feed(val version: String = "1.0",
                 val home_page_url: String = "https://arbeidsplassen.nav.no/stillinger-feed",
                 val feed_url: String = "https://arbeidsplassen.nav.no/stillinger-feed", // self
                 val description: String = "Dette er spennende greier",
-                val next_url: String,
+                @JsonInclude(JsonInclude.Include.ALWAYS)
+                val next_url: String?,
                 @JsonIgnore
                 val lastModified: ZonedDateTime = ZonedDateTime.now(),
                 @JsonIgnore
                 val etag: String = "",
                 val id: UUID = UUID.randomUUID(),
+                @JsonInclude(JsonInclude.Include.ALWAYS)
                 val next_id: UUID? = null,
                 val items: MutableList<FeedLine> = mutableListOf()
 ) {

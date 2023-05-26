@@ -126,7 +126,7 @@ class FeedService(private val feedRepository: FeedRepository,
                     etag = sisteItemIPage.id.toString(),
                     lastModified = sisteItemIPage.lastModified,
                     next_id = nextId,
-                    next_url = "$urlPrefix/feed/$nextId",
+                    next_url = nextId?.let { "$urlPrefix/feed/$it" },
                     feed_url = "$urlPrefix/feed/${førsteItem.id.toString()}",
                     items = feedLines
                 )
