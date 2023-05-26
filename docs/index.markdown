@@ -10,6 +10,8 @@ The feed contains all job vacancies that have been posted at [Arbeidsplassen.no]
 
 Each change to an ad will generate a new entry in the feed, but when querying for the details of a vacancy you will only receive the newest data.
 
+> Note: If an ad is actively stopped (i.e. not simply inactive because of expiry), it will be updated by masking or removing certain fields including title, employer, business and contact information. 
+
 Consumers are responsible for keeping their data up to date by subscribing to the feed, with extra consideration for not exposing contact information for inactive vacancies. 
 
 ## API specification
