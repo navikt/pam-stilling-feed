@@ -2,6 +2,7 @@ package no.nav.pam.stilling.feed.config
 
 import org.slf4j.LoggerFactory
 import java.sql.Connection
+import java.sql.PreparedStatement
 import javax.sql.DataSource
 
 /**
@@ -38,7 +39,7 @@ import javax.sql.DataSource
  *   Spring TransactionTemplate er supergenerisk og er i stand til å joine transaksjoner fra andre datakilder (f.eks køer)
  * - Både Spring og TxTemplate baserer seg på at du må utføre det som skal gjøres i en transaksjon innenfor en
  *   doInTransaction() blokk.
- * - Spring tilbyr annotasjoner og aspekter for å abstrehere bort doInTransaction - TxTemplate vil aldri gjøre det
+ * - Spring tilbyr annotasjoner og aspekter for å abstrahere bort doInTransaction - TxTemplate vil aldri gjøre det
  * - Spring lagrer transaction context i en ThreadLocal slik at du ikke trenger å propagere context selv
  *   TxTemplate gjør det eksplisitt. Det gir mer "støy" i koden, men er utrolig mye mer robust,
  *
@@ -48,7 +49,7 @@ class TxTemplate(private val ds: DataSource) {
         private val LOG = LoggerFactory.getLogger(TxTemplate::class.java)
     }
 
-    fun <R> doInTransaction(existingContext: TxContext? = null, txBlock: (ctx: TxContext) -> R) : R? {
+    fun <R> doInTransaction(existingContext: TxContext? = null, txBlock: (ctx: TxContext) -> R): R? {
         val conn = existingContext?.connection() ?: ds.connection
         val isNestedTransaction = existingContext != null
 
@@ -69,7 +70,7 @@ class TxTemplate(private val ds: DataSource) {
         }
 
         if (!isNestedTransaction) {
-            conn.use { c->
+            conn.use { c ->
                 if (ctx.isRollbackOnly())
                     c.rollback()
                 else
@@ -88,8 +89,76 @@ class TxContext(private val conn: Connection) {
     private var rollbackOnly = false
 
     fun setRollbackOnly() {
-        rollbackOnly = true}
+        rollbackOnly = true
+    }
 
     fun isRollbackOnly() = rollbackOnly
     fun connection() = conn
+}
+
+
+/**
+ * Utilityobjekt som er ment som en fattig trøst for de som savner Spring NamedParameterJdbcTemplate.
+ * Dette er svært enkelt uten noen forsøk på smart eller magisk logikk. Det er basert på enkel substituering
+ * av :verdi: til ? i en streng, og en måte å holde orden på hvilken ordinal verdien skal ha.
+ *
+ * Forventet bruk/oppførsel:
+ *
+ * ```
+ * val params = mapOf<String, (pstmt: PreparedStatement, pos: Int) -> Unit>(
+ *     Pair(":bar:") { pstmt, pos -> pstmt.setString(pos, "bar_verdi") },
+ *     Pair(":baz:") { pstmt, pos -> pstmt.setString(pos, "baz_verdi") }
+ *   )
+ * val preparedStatement = prepareStatement(connection,
+ *      "select * from foo where bar=:bar: and baz=:baz: and gazonk > :bar:",
+ *      params
+ *    )
+ * preparedStatement.execute()...
+ * ```
+ *
+ * her er forventet oppførsel at prapareStatement returnerer et PreparedStatement med følgende SQL:
+ * ```
+ * "select * from foo where bar=? and baz=? and gazonk > ?"
+ * ```
+ * og at følgende kode har kjørt:
+ * ```
+ * pstmt.setString(1, "bar_verdi")
+ * pstmt.setString(2, "baz_verdi")
+ * pstmt.setString(3, "bar_verdi")
+ * ```
+ */
+object PSTMTUtil {
+    fun prepareStatement(
+        conn: Connection,
+        sql: String,
+        params: Map<String, (pstmt: PreparedStatement, pos: Int) -> Unit>
+    ): PreparedStatement {
+        val preparedSql = sql.replace(Regex(":[^:]+:"), "?")
+        val pstmt = conn.prepareStatement(preparedSql)
+
+        val placeholders = findPlaceholders(sql)
+        applyParams(params, placeholders, pstmt)
+
+        return pstmt
+    }
+
+    private fun applyParams(
+        params: Map<String, (pstmt: PreparedStatement, pos: Int) -> Unit>,
+        placeholders: List<String>,
+        pstmt: PreparedStatement
+    ) {
+        params.forEach { me ->
+            var pos = 0
+            placeholders.forEach { p ->
+                pos++
+                if (p == me.key)
+                    me.value(pstmt, pos)
+            }
+        }
+    }
+
+    private fun findPlaceholders(sql: String): List<String> =
+        Regex(":[^:]+:").findAll(sql).map { mr ->
+            mr.value
+        }.toList()
 }
