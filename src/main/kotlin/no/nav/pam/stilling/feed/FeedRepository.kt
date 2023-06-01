@@ -1,5 +1,6 @@
 package no.nav.pam.stilling.feed
 
+import no.nav.pam.stilling.feed.config.PSTMTUtil
 import no.nav.pam.stilling.feed.config.TxContext
 import no.nav.pam.stilling.feed.config.TxTemplate
 import no.nav.pam.stilling.feed.dto.Feed
@@ -7,6 +8,7 @@ import no.nav.pam.stilling.feed.dto.FeedItem
 import no.nav.pam.stilling.feed.dto.FeedPageItem
 import no.nav.pam.stilling.feed.dto.KonsumentDTO
 import org.slf4j.LoggerFactory
+import java.sql.PreparedStatement
 import java.sql.Timestamp
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -114,27 +116,25 @@ class FeedRepository(private val txTemplate: TxTemplate) {
         return txTemplate.doInTransaction(txContext) { ctx ->
             val feedPageItems = mutableListOf<FeedPageItem>()
             // NB: Dette garanterer ikke at vi har monotont stigende sist_endret...
-            val sistEndretClause = if (sistEndret == null) ""
-                else
-                    " and sist_endret >= ? "
-            val sistEndretIdx = if (sistEndret == null) 0 else 1
+            var sistEndretClause = ""
+            val params = mutableMapOf<String, (pstmt: PreparedStatement, pos: Int) -> Unit>(
+                Pair(":seq_no:") { pstmt, pos -> pstmt.setObject(pos, seqNo) },
+                Pair(":antall:") { pstmt, pos -> pstmt.setInt(pos, antall) }
+            )
+            sistEndret?.let { s ->
+                sistEndretClause = " and sist_endret >= :sist_endret: "
+                params[":sist_endret:"] = { pstmt, pos -> pstmt.setTimestamp(pos, Timestamp(s.toInstant().toEpochMilli())) }
+            }
 
             val sql = """
                 select id, sist_endret, seq_no, status, title, business_name, municipal, feed_item_id
                 from feed_page_item
-                where seq_no > ? $sistEndretClause
+                where seq_no > :seq_no: $sistEndretClause
                 order by seq_no
-                limit ?
+                limit :antall:
             """.trimIndent()
             val c = ctx.connection()
-            c.prepareStatement(sql).apply {
-                this.setObject(1, seqNo)
-                sistEndret?.let { s ->
-                    this.setTimestamp(2, Timestamp(s.toInstant().toEpochMilli()))
-                }
-
-                this.setInt(2+sistEndretIdx, antall)
-            }.use { statement ->
+            PSTMTUtil.prepareStatement(c, sql, params).use { statement ->
                 val resultSet = statement.executeQuery()
                 while (resultSet.next())
                     feedPageItems.add(FeedPageItem.fraDatabase(resultSet))
