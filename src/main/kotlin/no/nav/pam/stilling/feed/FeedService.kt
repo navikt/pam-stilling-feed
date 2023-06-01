@@ -9,13 +9,14 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.util.*
 
-class FeedService(private val feedRepository: FeedRepository,
-                  private val txTemplate: TxTemplate,
-                  private val objectMapper: ObjectMapper,
-                  private val stillingUrlBase: String = "https://arbeidsplassen.nav.no/stillinger/stilling") {
+class FeedService(
+    private val feedRepository: FeedRepository,
+    private val txTemplate: TxTemplate,
+    private val objectMapper: ObjectMapper,
+    private val stillingUrlBase: String = "https://arbeidsplassen.nav.no/stillinger/stilling"
+) {
     companion object {
         private val LOG = LoggerFactory.getLogger(FeedService::class.java)
-
         private val urlPrefix = "/api/v1"
     }
 
@@ -30,15 +31,12 @@ class FeedService(private val feedRepository: FeedRepository,
      * NB: status==REJECTED gjelder også annonser som er merket som duplikater (tilsynelatende KUN duplikater?).
      * Skal disse maskeres, eller gjelder det kun annonser som er DELETED eller STOPPED?
      */
-    private fun adSkalMaskeres(ad: AdDTO) =
-        listOf("STOPPED", "DELETED", "REJECTED").contains(ad.status)
+    private fun adSkalMaskeres(ad: AdDTO) = listOf("STOPPED", "DELETED", "REJECTED").contains(ad.status)
 
     fun lagreNyStillingsAnnonse(newAd: AdDTO, txContext: TxContext? = null) : Pair<FeedItem, FeedPageItem>? {
-        val ad = if (adSkalMaskeres(newAd))
-                newAd.copy(title = "...", contactList = mutableListOf<ContactDTO>(),
-                    employer = null, businessName = "")
-            else
-                newAd
+        val ad =
+            if (!adSkalMaskeres(newAd)) newAd
+            else newAd.copy(title = "...", contactList = mutableListOf(), employer = null, businessName = "")
 
         if (ad.source == "FINN") {
             // TODO skal vi ignorere FINN annonser?
@@ -55,10 +53,12 @@ class FeedService(private val feedRepository: FeedRepository,
             val statusDescription = if (active) "ACTIVE" else "INACTIVE"
             val feedJson = if (active) objectMapper.writeValueAsString(feedAd) else ""
 
-            val feedItem = FeedItem(uuid = UUID.fromString(ad.uuid),
+            val feedItem = FeedItem(
+                uuid = UUID.fromString(ad.uuid),
                 json = feedJson,
                 sistEndret = ad.updated.atZone(ZoneId.of("Europe/Oslo")),
-                status = statusDescription)
+                status = statusDescription
+            )
             feedRepository.lagreFeedItem(feedItem, ctx)
 
             val feedPageItem = FeedPageItem(
@@ -75,6 +75,7 @@ class FeedService(private val feedRepository: FeedRepository,
             return@doInTransaction Pair(feedItem, lagretPageItem)
         }!!
     }
+
     fun lagreNyeStillingsAnnonserFraJson(jsonAnnonser: List<String>, txContext: TxContext? = null) : List<Pair<FeedItem, FeedPageItem>> {
         return txTemplate.doInTransaction(txContext) { ctx ->
             // TODO Hvis vi trenger å optimalisere så er dette en åpenbar kandidat for å batche jdbc-kall
@@ -82,7 +83,8 @@ class FeedService(private val feedRepository: FeedRepository,
             return@doInTransaction lagreNyeStillingsAnnonser(ads, ctx)
         }!!
     }
-    fun lagreNyeStillingsAnnonser(ads: List<AdDTO>, txContext: TxContext? = null) : List<Pair<FeedItem, FeedPageItem>> {
+
+    fun lagreNyeStillingsAnnonser(ads: List<AdDTO>, txContext: TxContext? = null): List<Pair<FeedItem, FeedPageItem>> {
         return txTemplate.doInTransaction(txContext) { ctx ->
             val items = ads.map { ad ->
                 lagreNyStillingsAnnonse(ad, txContext)
@@ -91,25 +93,26 @@ class FeedService(private val feedRepository: FeedRepository,
         }!!
     }
 
-    fun hentStillingsAnnonse(uuid: UUID, txContext: TxContext? = null) : FeedItem? {
+    fun hentStillingsAnnonse(uuid: UUID, txContext: TxContext? = null): FeedItem? {
         return txTemplate.doInTransaction(txContext) { ctx ->
-            val feedItem = feedRepository.hentFeedItem(uuid, ctx)
-
-            return@doInTransaction feedItem
+            return@doInTransaction feedRepository.hentFeedItem(uuid, ctx)
         }
     }
 
-    fun hentFeedHvis(id: UUID,
-                     etag: String? = null,
-                     sistEndret: ZonedDateTime? = null,
-                     pageSize: Int = Feed.defaultPageSize,
-                     txContext : TxContext? = null): Feed? {
+    fun hentFeedHvis(
+        id: UUID,
+        etag: String? = null,
+        sistEndret: ZonedDateTime? = null,
+        txContext: TxContext? = null
+    ): Feed? {
         return txTemplate.doInTransaction(txContext) { ctx ->
             val førsteItem = feedRepository.hentFeedPageItem(id)
+
             førsteItem?.let { f ->
                 val items = feedRepository.hentFeedPageItemsNyereEnn(f.seqNo, sistEndret = sistEndret)
-                val sisteItem = if (items.size > 0) items[items.size-1] else førsteItem
-                val sisteItemIPage = if (items.size > 1) items[items.size-2] else sisteItem
+                val sisteItem = if (items.size > 0) items[items.size - 1] else førsteItem
+                val sisteItemIPage = if (items.size > 1) items[items.size - 2] else sisteItem
+
                 if (etag != null && sistEndret != null &&
                     sisteItemIPage.id.toString() == etag && sisteItemIPage.lastModified.isBefore(sistEndret)) {
                     // Det har ikke vært endringer siden etag og sistEndret
@@ -118,28 +121,31 @@ class FeedService(private val feedRepository: FeedRepository,
 
                 val feedLines = mutableListOf<FeedLine>()
                 feedLines.add(FeedLine.fraFeedPageItem(f, urlPrefix))
-                val n : Int = if (sisteItemIPage.id == sisteItem.id) 0 else 1
-                items.dropLast(n).forEach { feedLines.add( FeedLine.fraFeedPageItem(it)) }
+                val n: Int = if (sisteItemIPage.id == sisteItem.id) 0 else 1
+                items.dropLast(n).forEach { feedLines.add(FeedLine.fraFeedPageItem(it)) }
 
                 val nextId = if (sisteItem.id == sisteItemIPage.id) null else sisteItemIPage.id
-                return@doInTransaction Feed(id = førsteItem.id,
+                return@doInTransaction Feed(
+                    id = førsteItem.id,
                     etag = sisteItemIPage.id.toString(),
                     lastModified = sisteItemIPage.lastModified,
                     next_id = nextId,
                     next_url = nextId?.let { "$urlPrefix/feed/$it" },
-                    feed_url = "$urlPrefix/feed/${førsteItem.id.toString()}",
+                    feed_url = "$urlPrefix/feed/${førsteItem.id}",
                     items = feedLines
                 )
             }
             return@doInTransaction null
         }
     }
-    fun hentFørsteSide(txContext : TxContext? = null): FeedPageItem? {
+
+    fun hentFørsteSide(txContext: TxContext? = null): FeedPageItem? {
         return txTemplate.doInTransaction(txContext) { ctx ->
             return@doInTransaction feedRepository.hentFørsteSide(ctx)
         }
     }
-    fun hentSisteSide(txContext : TxContext? = null): FeedPageItem? {
+
+    fun hentSisteSide(txContext: TxContext? = null): FeedPageItem? {
         return txTemplate.doInTransaction(txContext) { ctx ->
             return@doInTransaction feedRepository.hentSisteSide(ctx)
         }

@@ -49,7 +49,7 @@ class TxTemplate(private val ds: DataSource) {
         private val LOG = LoggerFactory.getLogger(TxTemplate::class.java)
     }
 
-    fun <R> doInTransaction(existingContext: TxContext? = null, txBlock: (ctx: TxContext) -> R) : R? {
+    fun <R> doInTransaction(existingContext: TxContext? = null, txBlock: (ctx: TxContext) -> R): R? {
         val conn = existingContext?.connection() ?: ds.connection
         val isNestedTransaction = existingContext != null
 
@@ -70,7 +70,7 @@ class TxTemplate(private val ds: DataSource) {
         }
 
         if (!isNestedTransaction) {
-            conn.use { c->
+            conn.use { c ->
                 if (ctx.isRollbackOnly())
                     c.rollback()
                 else
@@ -89,7 +89,8 @@ class TxContext(private val conn: Connection) {
     private var rollbackOnly = false
 
     fun setRollbackOnly() {
-        rollbackOnly = true}
+        rollbackOnly = true
+    }
 
     fun isRollbackOnly() = rollbackOnly
     fun connection() = conn
@@ -127,7 +128,11 @@ class TxContext(private val conn: Connection) {
  * ```
  */
 object PSTMTUtil {
-    fun prepareStatement(conn: Connection, sql: String, params: Map<String, (pstmt: PreparedStatement, pos: Int) -> Unit>) : PreparedStatement {
+    fun prepareStatement(
+        conn: Connection,
+        sql: String,
+        params: Map<String, (pstmt: PreparedStatement, pos: Int) -> Unit>
+    ): PreparedStatement {
         val preparedSql = sql.replace(Regex(":[^:]+:"), "?")
         val pstmt = conn.prepareStatement(preparedSql)
 
@@ -153,7 +158,7 @@ object PSTMTUtil {
     }
 
     private fun findPlaceholders(sql: String): List<String> =
-        Regex(":[^:]+:").findAll(sql).map {mr ->
+        Regex(":[^:]+:").findAll(sql).map { mr ->
             mr.value
         }.toList()
 }

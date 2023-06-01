@@ -1,7 +1,5 @@
 package no.nav.pam.stilling.feed
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import no.nav.pam.stilling.feed.config.TxTemplate
 import org.apache.kafka.clients.consumer.ConsumerRecords
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.KafkaException
@@ -12,11 +10,11 @@ import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.concurrent.thread
 
-class KafkaStillingListener(private val kafkaConsumer: KafkaConsumer<String?, ByteArray?>,
-                            private val feedService: FeedService,
-                            private val objectMapper: ObjectMapper,
-                            private val txTemplate: TxTemplate,
-                            private val healthService: HealthService) {
+class KafkaStillingListener(
+    private val kafkaConsumer: KafkaConsumer<String?, ByteArray?>,
+    private val feedService: FeedService,
+    private val healthService: HealthService
+) {
     companion object {
         private val LOG = LoggerFactory.getLogger(FeedRepository::class.java)
     }
@@ -33,9 +31,7 @@ class KafkaStillingListener(private val kafkaConsumer: KafkaConsumer<String?, By
             try {
                 records = kafkaConsumer.poll(Duration.ofSeconds(10))
                 if (records.count() > 0) {
-                    LOG.info("Leste ${records.count()} rader. Keys: {}",
-                        records.mapNotNull { it.key() }.joinToString()
-                    )
+                    LOG.info("Leste ${records.count()} rader. Keys: {}", records.mapNotNull { it.key() }.joinToString())
                     handleRecords(records!!)
                     kafkaConsumer.commitSync()
                 }
@@ -48,10 +44,8 @@ class KafkaStillingListener(private val kafkaConsumer: KafkaConsumer<String?, By
                 // Rollback har potensiale for å sende svært mange meldinger til topicet på veldig kort tid
                 // Har derfor lagt inn en grense på 10 rollback før appen omstartes. Det er fortsatt potensiale
                 // for å publisere svært mange meldinger, men det går ikke like fort...
-                if (ke.cause != null && ke.cause is AuthorizationException)
-                    healthService.addUnhealthyVote()
-                else
-                    rollback(records!!, kafkaConsumer, rollbackCounter)
+                if (ke.cause != null && ke.cause is AuthorizationException) healthService.addUnhealthyVote()
+                else rollback(records!!, kafkaConsumer, rollbackCounter)
             } catch (e: Exception) {
                 // Catchall - impliserer at vi skal restarte app
                 LOG.error("Uventet Exception i consumerloop, restarter app ${e.message}", e)
@@ -67,7 +61,7 @@ class KafkaStillingListener(private val kafkaConsumer: KafkaConsumer<String?, By
     ) {
         try {
             val firstOffsets = mutableMapOf<String, MutableMap<Int, Long>>()
-            records.forEach() {
+            records.forEach {
                 val partitions = firstOffsets[it.topic()] ?: mutableMapOf()
                 firstOffsets[it.topic()] = partitions
                 val currentOffset = it.offset()
@@ -88,7 +82,6 @@ class KafkaStillingListener(private val kafkaConsumer: KafkaConsumer<String?, By
     }
 
     fun handleRecords(records: ConsumerRecords<String?, ByteArray?>) {
-        val now = System.currentTimeMillis()
         val adIds = records.mapNotNull { it.key() }.toList()
         LOG.info("Mottar ${records.count()} records med stillingsannonser: {}", adIds.joinToString(", "))
 

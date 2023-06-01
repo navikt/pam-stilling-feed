@@ -2,10 +2,10 @@ package no.nav.pam.stilling.feed.controllertest
 
 import no.nav.pam.stilling.feed.lokalUrlBase
 import no.nav.pam.stilling.feed.startLocalApplication
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.TestInstance
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -21,15 +21,8 @@ class NaisTest {
 
     @Test
     fun isAlive() {
-        val request = HttpRequest.newBuilder()
-            .uri(URI("$lokalUrlBase/internal/isAlive"))
-            .GET()
-            .build()
-
-        val response = HttpClient.newBuilder()
-            .build()
-            .send(request, BodyHandlers.ofString())
-
+        val request = HttpRequest.newBuilder().uri(URI("$lokalUrlBase/internal/isAlive")).GET().build()
+        val response = HttpClient.newBuilder().build().send(request, BodyHandlers.ofString())
         assertThat(response.statusCode()).isEqualTo(200)
     }
 }

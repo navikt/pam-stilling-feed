@@ -19,8 +19,8 @@ class PSTMTUtilTest {
         val verdier = Array<String>(3) { p -> "" }
 
         val params = mapOf<String, (pstmt: PreparedStatement, pos: Int) -> Unit>(
-            Pair(":foobaz:") { pstmt, pos -> verdier[pos-1] = "foo $pos" },
-            Pair(":id:") { pstmt, pos -> verdier[pos-1] = "id $pos" }
+            Pair(":foobaz:") { pstmt, pos -> verdier[pos - 1] = "foo $pos" },
+            Pair(":id:") { pstmt, pos -> verdier[pos - 1] = "id $pos" }
         )
         val preparedStatement = PSTMTUtil.prepareStatement(conn, sql, params)
 

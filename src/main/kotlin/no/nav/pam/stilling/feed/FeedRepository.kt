@@ -15,11 +15,7 @@ import java.time.ZonedDateTime
 import java.util.*
 
 class FeedRepository(private val txTemplate: TxTemplate) {
-    companion object {
-        private val LOG = LoggerFactory.getLogger(FeedRepository::class.java)
-    }
-
-    fun lagreFeedItem(feedItem: FeedItem, txContext : TxContext? = null): Int? {
+    fun lagreFeedItem(feedItem: FeedItem, txContext: TxContext? = null): Int? {
         return txTemplate.doInTransaction(txContext) { ctx ->
             val sql = """
                 insert into feed_item(id, json, sist_endret, status) 
@@ -43,7 +39,7 @@ class FeedRepository(private val txTemplate: TxTemplate) {
         }
     }
 
-    fun hentFeedItem(id: UUID, txContext : TxContext? = null): FeedItem? {
+    fun hentFeedItem(id: UUID, txContext: TxContext? = null): FeedItem? {
         return txTemplate.doInTransaction(txContext) { ctx ->
             val sql = """
                 select id, json, sist_endret, status
@@ -62,7 +58,7 @@ class FeedRepository(private val txTemplate: TxTemplate) {
         }
     }
 
-    fun lagreFeedPageItem(feedPage: FeedPageItem, txContext : TxContext? = null) : FeedPageItem {
+    fun lagreFeedPageItem(feedPage: FeedPageItem, txContext: TxContext? = null): FeedPageItem {
         return txTemplate.doInTransaction(txContext) { ctx ->
             val sql = """
                 insert into feed_page_item(id, status, title, business_name, municipal, feed_item_id) 
@@ -90,7 +86,7 @@ class FeedRepository(private val txTemplate: TxTemplate) {
         }!!
     }
 
-    fun hentFeedPageItem(id: UUID, txContext : TxContext? = null): FeedPageItem? {
+    fun hentFeedPageItem(id: UUID, txContext: TxContext? = null): FeedPageItem? {
         return txTemplate.doInTransaction(txContext) { ctx ->
             val sql = """
                 select id, sist_endret, seq_no, status, title, business_name, municipal, feed_item_id
@@ -110,9 +106,11 @@ class FeedRepository(private val txTemplate: TxTemplate) {
         }
     }
 
-    fun hentFeedPageItemsNyereEnn(seqNo: Long, antall: Int = Feed.defaultPageSize,
-                                  sistEndret: ZonedDateTime? = null,
-                                  txContext : TxContext? = null): MutableList<FeedPageItem> {
+    fun hentFeedPageItemsNyereEnn(
+        seqNo: Long, antall: Int = Feed.defaultPageSize,
+        sistEndret: ZonedDateTime? = null,
+        txContext: TxContext? = null
+    ): MutableList<FeedPageItem> {
         return txTemplate.doInTransaction(txContext) { ctx ->
             val feedPageItems = mutableListOf<FeedPageItem>()
             // NB: Dette garanterer ikke at vi har monotont stigende sist_endret...
@@ -123,6 +121,7 @@ class FeedRepository(private val txTemplate: TxTemplate) {
             )
             sistEndret?.let { s ->
                 sistEndretClause = " and sist_endret >= :sist_endret: "
+
                 params[":sist_endret:"] = { pstmt, pos -> pstmt.setTimestamp(pos, Timestamp(s.toInstant().toEpochMilli())) }
             }
 
@@ -143,7 +142,7 @@ class FeedRepository(private val txTemplate: TxTemplate) {
         }!!
     }
 
-    fun hentFørsteSide(txContext : TxContext? = null): FeedPageItem? {
+    fun hentFørsteSide(txContext: TxContext? = null): FeedPageItem? {
         return txTemplate.doInTransaction(txContext) { ctx ->
             val sql = """
                 select id, sist_endret, seq_no, status, title, business_name, municipal, feed_item_id
@@ -153,14 +152,13 @@ class FeedRepository(private val txTemplate: TxTemplate) {
             val c = ctx.connection()
             c.prepareStatement(sql).use { statement ->
                 val resultSet = statement.executeQuery()
-                if (!resultSet.next())
-                    return@doInTransaction null
+                if (!resultSet.next()) return@doInTransaction null
                 return@doInTransaction FeedPageItem.fraDatabase(resultSet)
             }
         }
     }
 
-    fun hentSisteSide(txContext : TxContext? = null): FeedPageItem? {
+    fun hentSisteSide(txContext: TxContext? = null): FeedPageItem? {
         return txTemplate.doInTransaction(txContext) { ctx ->
             val sql = """
                 select id, sist_endret, seq_no, status, title, business_name, municipal, feed_item_id
@@ -170,24 +168,24 @@ class FeedRepository(private val txTemplate: TxTemplate) {
             val c = ctx.connection()
             c.prepareStatement(sql).use { statement ->
                 val resultSet = statement.executeQuery()
-                if (!resultSet.next())
-                    return@doInTransaction null
+                if (!resultSet.next()) return@doInTransaction null
                 return@doInTransaction FeedPageItem.fraDatabase(resultSet)
             }
         }
     }
 
-    fun hentFørsteSideNyereEnn(cutoff: ZonedDateTime, txContext : TxContext? = null) = txTemplate.doInTransaction(txContext) {ctx ->
-        val sql = """
-            select id, sist_endret, seq_no, status, title, business_name, municipal, feed_item_id
-            from feed_page_item
-            where seq_no in (select min(f2.seq_no) from feed_page_item f2 where sist_endret > ?)
-        """.trimIndent()
+    fun hentFørsteSideNyereEnn(cutoff: ZonedDateTime, txContext: TxContext? = null) =
+        txTemplate.doInTransaction(txContext) { ctx ->
+            val sql = """
+                select id, sist_endret, seq_no, status, title, business_name, municipal, feed_item_id
+                from feed_page_item
+                where seq_no in (select min(f2.seq_no) from feed_page_item f2 where sist_endret > ?)
+            """.trimIndent()
 
-        ctx.connection()
-            .prepareStatement(sql)
-            .apply { setTimestamp(1, Timestamp(cutoff.toInstant().toEpochMilli())) }
-            .executeQuery()
-            .takeIf { it.next() }?.let { FeedPageItem.fraDatabase(it) }
-    }
+            ctx.connection()
+                .prepareStatement(sql)
+                .apply { setTimestamp(1, Timestamp(cutoff.toInstant().toEpochMilli())) }
+                .executeQuery()
+                .takeIf { it.next() }?.let { FeedPageItem.fraDatabase(it) }
+        }
 }

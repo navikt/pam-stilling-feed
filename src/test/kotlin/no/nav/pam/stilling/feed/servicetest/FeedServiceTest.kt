@@ -15,7 +15,7 @@ import java.util.*
 class FeedServiceTest {
     var feedRepository: FeedRepository? = null
     var feedService: FeedService? = null
-    var txTemplate : TxTemplate? = null
+    var txTemplate: TxTemplate? = null
 
     @BeforeAll
     fun init() {
@@ -57,7 +57,7 @@ class FeedServiceTest {
         feedService!!.lagreNyStillingsAnnonse(ad3maskert)
 
         val antallAnnonser = antallAnnonser()
-        Assertions.assertThat(antallAnnonser-antallEksisterendeAnnonser).isEqualTo(3)
+        Assertions.assertThat(antallAnnonser - antallEksisterendeAnnonser).isEqualTo(3)
 
         val lagretAd1 = feedService!!.hentStillingsAnnonse(UUID.fromString(ad1.uuid))!!
         val lagretFeedAd = objectMapper.readValue(lagretAd1.json, FeedAd::class.java)
@@ -72,24 +72,21 @@ class FeedServiceTest {
     @Test
     fun skalLagreFeedSider() {
         val adIds = mutableListOf<String>()
-        for (i in 1..(Feed.defaultPageSize*3)+1) {
+        for (i in 1..(Feed.defaultPageSize * 3) + 1) {
             val ad = objectMapper.readValue(javaClass.getResourceAsStream("/ad_dto.json"), AdDTO::class.java)
-                .copy(uuid = UUID.randomUUID().toString(),
-                    title =  "Annonse #$i"
-                )
+                .copy(uuid = UUID.randomUUID().toString(), title = "Annonse #$i")
             adIds.add(ad.uuid)
-            val adItem = feedService!!.lagreNyStillingsAnnonse(ad)
+            feedService!!.lagreNyStillingsAnnonse(ad)
         }
 
-        Assertions.assertThat(adIds.size).isEqualTo(Feed.defaultPageSize*3 + 1)
+        Assertions.assertThat(adIds.size).isEqualTo(Feed.defaultPageSize * 3 + 1)
 
         var førsteSide = feedService!!.hentFørsteSide()
         var side = feedService!!.hentFeedHvis(førsteSide!!.id)!!
         side.items.forEach { adIds.remove(it.feed_entry.uuid) }
-        while(side.next_id != null) {
+        while (side.next_id != null) {
             side = feedService!!.hentFeedHvis(side.next_id!!)!!
             side.items.forEach { adIds.remove(it.feed_entry.uuid) }
-            //println(side)
         }
         Assertions.assertThat(adIds).isEmpty()
     }
@@ -103,10 +100,10 @@ class FeedServiceTest {
         val ad3 = objectMapper.readValue(javaClass.getResourceAsStream("/ad_dto.json"), AdDTO::class.java)
             .copy(uuid = UUID.randomUUID().toString())
 
-        txTemplate!!.doInTransaction() {ctx ->
+        txTemplate!!.doInTransaction { ctx ->
             feedService!!.lagreNyStillingsAnnonse(ad1, ctx)
 
-            txTemplate!!.doInTransaction() { ctxNew -> // Implisitt ny kontekst som ikke er del av eksisterende transaksjon
+            txTemplate!!.doInTransaction { ctxNew -> // Implisitt ny kontekst som ikke er del av eksisterende transaksjon
                 feedService!!.lagreNyStillingsAnnonseFraJson(objectMapper.writeValueAsString(ad2), ctxNew)
             }
             txTemplate!!.doInTransaction(ctx) { ctxNew -> // Propagerer kontekst og deltar dermed i eksisterende transaksjon
@@ -122,5 +119,4 @@ class FeedServiceTest {
         Assertions.assertThat(lagretAd2?.status).isNotNull
         Assertions.assertThat(lagretAd3?.status).isNull()
     }
-
 }

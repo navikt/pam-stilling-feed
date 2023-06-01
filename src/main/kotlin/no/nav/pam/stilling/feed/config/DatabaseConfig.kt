@@ -26,4 +26,5 @@ class DatabaseConfig(env: Map<String, String>,
     }.let(::HikariDataSource)
 
 }
+
 fun Map<String, String>.variable(felt: String) = this[felt] ?: error("$felt er ikke angitt")
