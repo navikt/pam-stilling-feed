@@ -152,7 +152,7 @@ private fun mapCategories(ad: AdDTO): List<FeedCategory> {
                 code = c.code,
                 name = c.name,
                 description = c.description ?: "",
-                score = scores["${c.categoryType}:${c.code}"] ?: scores["${c.categoryType}:${c.name}"] ?: 0.0
+                score = c.score ?: scores["${c.categoryType}:${c.code}"] ?: scores["${c.categoryType}:${c.name}"] ?: 0.0
             )
         }
         .sortedBy { it.categoryType }
