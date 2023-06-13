@@ -54,7 +54,8 @@ data class CategoryDTO (
     val categoryType: String,
     val name: String,
     val description: String? = null,
-    val parentId: Long? = null
+    val parentId: Long? = null,
+    val score: Double? = null
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
