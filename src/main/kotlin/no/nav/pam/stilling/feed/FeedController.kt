@@ -101,6 +101,7 @@ class FeedController(private val feedService: FeedService, private val objectMap
         val feed = feedService.hentFeedHvis(
             id = UUID.fromString(feedPageId),
             etag = etag,
+            antall = pageSize,
             sistEndret = strToZonedDateTime(ifModifiedSinceStr)
         )
 

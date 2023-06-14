@@ -103,13 +103,14 @@ class FeedService(
         id: UUID,
         etag: String? = null,
         sistEndret: ZonedDateTime? = null,
+        antall: Int = Feed.defaultPageSize,
         txContext: TxContext? = null
     ): Feed? {
         return txTemplate.doInTransaction(txContext) { ctx ->
             val førsteItem = feedRepository.hentFeedPageItem(id)
 
             førsteItem?.let { f ->
-                val items = feedRepository.hentFeedPageItemsNyereEnn(f.seqNo, sistEndret = sistEndret)
+                val items = feedRepository.hentFeedPageItemsNyereEnn(f.seqNo, sistEndret = sistEndret, antall = antall)
                 val sisteItem = if (items.size > 0) items[items.size - 1] else førsteItem
                 val sisteItemIPage = if (items.size > 1) items[items.size - 2] else sisteItem
 
