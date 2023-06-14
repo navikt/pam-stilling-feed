@@ -53,7 +53,7 @@ spec:
     - name: STILLING_INTERN_TOPIC
       value: teampam.stilling-intern-1
     - name: STILLING_INTERN_GROUP_ID
-      value: StillingFeed2
+      value: StillingFeed3
     - name: STILLING_URL_BASE
       value: "{{ stilling_url_base }}"
     - name: TILGANGSSTYRING_ENABLED

@@ -18,6 +18,7 @@ class FeedService(
     companion object {
         private val LOG = LoggerFactory.getLogger(FeedService::class.java)
         private val urlPrefix = "/api/v1"
+        private val SKAL_IGNORERE_FINN_ANNONSER = false // TODO skal vi ignorere FINN annonser?
     }
 
     fun lagreNyStillingsAnnonseFraJson(jsonAnnonse: String, txContext: TxContext? = null) : Pair<FeedItem, FeedPageItem> {
@@ -38,8 +39,7 @@ class FeedService(
             if (!adSkalMaskeres(newAd)) newAd
             else newAd.copy(title = "...", contactList = mutableListOf(), employer = null, businessName = "")
 
-        if (ad.source == "FINN") {
-            // TODO skal vi ignorere FINN annonser?
+        if (SKAL_IGNORERE_FINN_ANNONSER && ad.source == "FINN") {
             LOG.info("Ignorerer annonse ${ad.uuid} siden det er en finn annonse")
             return null
         } else if (ad.publishedByAdmin == null) {
