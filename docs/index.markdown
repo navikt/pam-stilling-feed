@@ -169,7 +169,6 @@ Feed entry
         "categoryType": "string",
         "code": "string",
         "name": "string",
-        "description": "string",
         "score": 0
       }
     ],
