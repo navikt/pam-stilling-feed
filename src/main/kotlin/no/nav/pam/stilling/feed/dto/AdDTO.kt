@@ -1,5 +1,6 @@
 package no.nav.pam.stilling.feed.dto
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import java.time.LocalDateTime
 
@@ -53,6 +54,7 @@ data class CategoryDTO (
     val code: String,
     val categoryType: String,
     val name: String,
+    @JsonIgnore
     val description: String? = null,
     val parentId: Long? = null,
     val score: Double? = null
