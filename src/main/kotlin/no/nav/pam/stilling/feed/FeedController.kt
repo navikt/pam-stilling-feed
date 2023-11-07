@@ -76,10 +76,10 @@ class FeedController(private val feedService: FeedService, private val objectMap
     private fun toInt(s: String?, defaultValue: Int): Int = s?.toIntOrNull() ?: defaultValue
 
     @OpenApi(
-        path = "/api/v1/feed/<feedPageId>",
+        path = "/api/v1/feed/{feedPageId}",
         tags = ["Feed"],
         methods = [HttpMethod.GET],
-        operationId = "feed/<feedPageId>",
+        operationId = "feed/{feedPageId}",
         description = "Returns the specified feed page, or 304 response if the page has not changed since last time (based on If-None-Match and If-Modified-Since headers)",
         security = [OpenApiSecurity(name = "BearerAuth")],
         pathParams = [OpenApiParam(name="feedPageId", description = "A unique ID for the feed page", required = true, allowEmptyValue = false, type = UUID::class)],
@@ -119,10 +119,10 @@ class FeedController(private val feedService: FeedService, private val objectMap
     }
 
     @OpenApi(
-        path = "/api/v1/feedentry/<entryId>",
+        path = "/api/v1/feedentry/{entryId}",
         tags = ["Feed"],
         methods = [HttpMethod.GET],
-        operationId = "feedentry/<entryId>",
+        operationId = "feedentry/{entryId}",
         description = "Returns details for the specified feed entry",
         security = [OpenApiSecurity(name = "BearerAuth")],
         pathParams = [OpenApiParam(name="entryId", description = "A unique ID for the feed entry", required = true, allowEmptyValue = false, type = UUID::class)],
