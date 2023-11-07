@@ -24,7 +24,13 @@ class FeedController(private val feedService: FeedService, private val objectMap
     fun setupRoutes(javalin: Javalin) {
         javalin.get(
             "/api/v1/feed/{feed_page_id}",
-            { ctx -> hentFeed(ctx, ctx.pathParam("feed_page_id"), toInt(ctx.queryParam("pageSize"), defaultOutboundPageSize)) },
+            { ctx ->
+                hentFeed(
+                    ctx,
+                    ctx.pathParam("feed_page_id"),
+                    toInt(ctx.queryParam("pageSize"), defaultOutboundPageSize)
+                )
+            },
             Rolle.KONSUMENT
         )
         javalin.get(
@@ -46,14 +52,35 @@ class FeedController(private val feedService: FeedService, private val objectMap
         operationId = "feed",
         description = "Returns first page of the feed by default, or last if query param 'last' is provided",
         security = [OpenApiSecurity(name = "BearerAuth")],
-        queryParams = [OpenApiParam(name="last", description = "Flag for requesting the last (newest) page of the feed", required = false, allowEmptyValue = true)],
+        queryParams = [OpenApiParam(
+            name = "last",
+            description = "Flag for requesting the last (newest) page of the feed",
+            required = false,
+            allowEmptyValue = true
+        )],
         headers = [
-            OpenApiParam(name = "If-None-Match", description = "Entity tag - Specific version of a resource. Provided by response header ETag", required = false, allowEmptyValue = true, type = UUID::class),
-            OpenApiParam(name = "If-Modified-Since", description = "Last-modified datetime in RFC 1123 format. Provided by response header Last-Modified", required = false, allowEmptyValue = true, type = String::class, example = "Thu, 31 Dec 1992 11:56:00 +0200")
+            OpenApiParam(
+                name = "If-None-Match",
+                description = "Entity tag - Specific version of a resource. Provided by response header ETag",
+                required = false,
+                allowEmptyValue = true,
+                type = UUID::class
+            ),
+            OpenApiParam(
+                name = "If-Modified-Since",
+                description = "Last-modified datetime in RFC 1123 format. Provided by response header Last-Modified",
+                required = false,
+                allowEmptyValue = true,
+                type = String::class,
+                example = "Thu, 31 Dec 1992 11:56:00 +0200"
+            )
         ],
         responses = [
             OpenApiResponse(status = "200", description = "Feed page", content = [OpenApiContent(from = Feed::class)]),
-            OpenApiResponse(status = "304", description = "Feed page is empty, or its contents have not changed since last time"),
+            OpenApiResponse(
+                status = "304",
+                description = "Feed page is empty, or its contents have not changed since last time"
+            ),
             OpenApiResponse(status = "404", description = "Could not find page"),
         ]
     )
@@ -82,14 +109,40 @@ class FeedController(private val feedService: FeedService, private val objectMap
         operationId = "feed/<feedPageId>",
         description = "Returns the specified feed page, or 304 response if the page has not changed since last time (based on If-None-Match and If-Modified-Since headers)",
         security = [OpenApiSecurity(name = "BearerAuth")],
-        pathParams = [OpenApiParam(name="feedPageId", description = "A unique ID for the feed page", required = true, allowEmptyValue = false, type = UUID::class)],
+        pathParams = [OpenApiParam(
+            name = "feedPageId",
+            description = "A unique ID for the feed page",
+            required = true,
+            allowEmptyValue = false,
+            type = UUID::class
+        )],
         headers = [
-            OpenApiParam(name = "If-None-Match", description = "Entity tag. Specific version of a resource. Provided by response header ETag", required = false, allowEmptyValue = true, type = UUID::class),
-            OpenApiParam(name = "If-Modified-Since", description = "Last-modified datetime in RFC 1123 format. Provided by response header Last-Modified", required = false, allowEmptyValue = true, type = String::class, example = "Thu, 31 Dec 1992 11:56:00 +0200")
+            OpenApiParam(
+                name = "If-None-Match",
+                description = "Entity tag. Specific version of a resource. Provided by response header ETag",
+                required = false,
+                allowEmptyValue = true,
+                type = UUID::class
+            ),
+            OpenApiParam(
+                name = "If-Modified-Since",
+                description = "Last-modified datetime in RFC 1123 format. Provided by response header Last-Modified",
+                required = false,
+                allowEmptyValue = true,
+                type = String::class,
+                example = "Thu, 31 Dec 1992 11:56:00 +0200"
+            )
         ],
         responses = [
-            OpenApiResponse(status = "200", description = "The specified feed page", content = [OpenApiContent(from = Feed::class)]),
-            OpenApiResponse(status = "304", description = "Feed page is empty, or its contents have not changed since last time"),
+            OpenApiResponse(
+                status = "200",
+                description = "The specified feed page",
+                content = [OpenApiContent(from = Feed::class)]
+            ),
+            OpenApiResponse(
+                status = "304",
+                description = "Feed page is empty, or its contents have not changed since last time"
+            ),
             OpenApiResponse(status = "404", description = "Could not find page"),
         ]
     )
@@ -125,9 +178,19 @@ class FeedController(private val feedService: FeedService, private val objectMap
         operationId = "feedentry/<entryId>",
         description = "Returns details for the specified feed entry",
         security = [OpenApiSecurity(name = "BearerAuth")],
-        pathParams = [OpenApiParam(name="entryId", description = "A unique ID for the feed entry", required = true, allowEmptyValue = false, type = UUID::class)],
+        pathParams = [OpenApiParam(
+            name = "entryId",
+            description = "A unique ID for the feed entry",
+            required = true,
+            allowEmptyValue = false,
+            type = UUID::class
+        )],
         responses = [
-            OpenApiResponse(status = "200", description = "The specified feed entry", content = [OpenApiContent(from = FeedEntryContent::class)]),
+            OpenApiResponse(
+                status = "200",
+                description = "The specified feed entry",
+                content = [OpenApiContent(from = FeedEntryContent::class)]
+            ),
             OpenApiResponse(status = "404", description = "Could not find feed entry"),
         ]
     )
