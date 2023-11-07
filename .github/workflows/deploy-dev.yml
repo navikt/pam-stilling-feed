@@ -12,6 +12,11 @@ on:
 jobs:
   call-workflow:
     uses: navikt/pam-deploy/.github/workflows/deploy-dev.yml@v4
+    permissions:
+      actions: read
+      contents: write
+      security-events: write
+      id-token: write
     with:
       JAVA_VERSION: 19
       BUILD_CACHE: gradle
