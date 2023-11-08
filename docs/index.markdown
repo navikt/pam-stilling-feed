@@ -23,8 +23,8 @@ exposing contact information for inactive vacancies.
 
 ## API specification
 
-Open API specification is available in both [SwaggerUI](https://pam-stilling-feed.intern.dev.nav.no/swagger)
-and [Redoc](https://pam-stilling-feed.intern.dev.nav.no/redoc).
+Open API specification is available in both [SwaggerUI](https://pam-stilling-feed.ekstern.dev.nav.no/swagger)
+and [Redoc](https://pam-stilling-feed.ekstern.dev.nav.no/redoc).
 
 ## Who can use this service?
 
