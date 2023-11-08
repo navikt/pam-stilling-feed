@@ -34,7 +34,7 @@ fun getOpenApiPlugin() = OpenApiPlugin(OpenApiPluginConfiguration()
             }
             .withServer { openApiServer ->
                 // TODO: Endre til prod-miljø når den eksisterer
-                openApiServer.url = "https://pam-stilling-feed.intern.dev.nav.no/"
+                openApiServer.url = "https://pam-stilling-feed.ekstern.dev.nav.no/"
                 openApiServer.description = "Arbeidsplassen.dev.no"
             }
             .withSecurity(SecurityComponentConfiguration().apply {

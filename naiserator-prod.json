@@ -1,5 +1,5 @@
 {
-  "ingress": ["https://pam-stilling-feed.intern.nav.no/"],
+  "ingress": ["https://pam-stilling-feed.intern.nav.no/", "https://pam-stilling-feed.nav.no/"],
   "kafka_pool": "nav-prod",
   "stilling_url_base": "https://arbeidsplassen.nav.no/stillinger/stilling",
   "tilgangsstyring_enabled": "true"
