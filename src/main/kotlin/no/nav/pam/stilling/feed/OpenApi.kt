@@ -21,7 +21,7 @@ fun getOpenApiPlugin() = OpenApiPlugin(OpenApiPluginConfiguration()
             .withOpenApiInfo { openApiInfo: OpenApiInfo ->
                 openApiInfo.title = "Public feed of job vacancies on Arbeidsplassen.no"
                 openApiInfo.description = "OpenAPI specification for the public feed of job vacancies on Arbeidsplassen.no provided by the Norwegian Labour and Welfare Administration"
-                openApiInfo.termsOfService = "https://arbeidsplassen.nav.no/vilkar-api"
+                openApiInfo.termsOfService = "https://arbeidsplassen.nav.no/avtale-stilling-feed"
                 openApiInfo.version = "v1"
                 openApiInfo.contact = OpenApiContact().apply {
                     name = "Arbeidsplassen.no"
