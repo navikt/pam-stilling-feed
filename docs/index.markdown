@@ -29,26 +29,12 @@ and [Redoc](https://pam-stilling-feed.ekstern.dev.nav.no/redoc).
 ## Who can use this service?
 
 Anyone can use this API free of charge, but by doing so you agree to
-the [terms of use](https://arbeidsplassen.nav.no/vilkar-api). However, API is not publicly open and requires
+the [terms of use](https://arbeidsplassen.nav.no/avtale-stilling-feed). However, API is not publicly open and requires
 authentication using a signed JWT token.
 
-There are two types of tokens, public and private. The public token may be revoked at any time and replaced by another
-one. If you require a more stable token please see information about registering as a consumer below.
-
-The current public token is
-
-```
-{% if site.public_api_token %}
-{{site.public_api_token}}
-{% else %}
-placeholder
-{% endif %}
-```
-
-### Registering for a private token
-
 In order to receive a private token, you need to be registered as a consumer.
-Please provide us with the following information by email
+Please provide us with a written confirmation that you agree to the terms of use as described above, as well 
+the following information by email
 to [nav.team.arbeidsplassen@nav.no](mailto:nav.team.arbeidsplassen@nav.no):
 
 * Identifier (Company name etc.)
