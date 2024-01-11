@@ -19,6 +19,7 @@ data class FeedAd(
     val expires: ZonedDateTime,
     val updated: ZonedDateTime,
     val workLocations: List<FeedLocation>,
+    val contactList: List<FeedContact> = emptyList(),
     val title: String,
     val description: String?,
     val sourceurl: String?,
@@ -44,6 +45,14 @@ data class FeedLocation(
     val postalCode: String?,
     val county: String?,
     val municipal: String?
+)
+
+data class FeedContact(
+    val name: String?,
+    val email: String?,
+    val phone: String?,
+    val role: String?,
+    val title: String?
 )
 
 data class FeedEmployer(
@@ -89,6 +98,7 @@ fun mapAd(source: AdDTO, stillingUrlBase: String?): FeedAd {
         expires = toZonedDateTime(source.expires)!!,
         updated = toZonedDateTime(source.updated)!!,
         workLocations = source.locationList.map { l -> mapLocation(l) },
+        contactList = source.contactList?.map { c -> mapContact(c) } ?: emptyList(),
         title = source.title ?: "",
         description = source.properties["adtext"] ?: "",
         sourceurl = source.properties["sourceurl"] ?: "",
@@ -185,6 +195,8 @@ fun mapLocation(sourceLocation: LocationDTO): FeedLocation {
     )
 }
 
+fun mapContact(sourceContact: ContactDTO) =
+    FeedContact(sourceContact.name, sourceContact.email, sourceContact.phone, sourceContact.role, sourceContact.title)
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
