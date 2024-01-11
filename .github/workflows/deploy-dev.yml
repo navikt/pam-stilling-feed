@@ -11,7 +11,7 @@ on:
       - feature/*
 jobs:
   call-workflow:
-    uses: navikt/pam-deploy/.github/workflows/deploy-dev.yml@v4
+    uses: navikt/pam-deploy/.github/workflows/deploy-dev.yml@v6
     permissions:
       actions: read
       contents: write
@@ -21,7 +21,6 @@ jobs:
       JAVA_VERSION: 19
       BUILD_CACHE: gradle
       NAIS_RESOURCE: naiserator.yml
-      CODEQL_ENABLED: true
+      SKIP_DRAFT_RELEASE: ${{ github.ref_name != 'main' }}
     secrets:
-      NAIS_DEPLOY_APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
       NAIS_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.NAIS_WORKLOAD_IDENTITY_PROVIDER }}
