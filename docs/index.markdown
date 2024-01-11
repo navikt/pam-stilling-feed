@@ -138,6 +138,15 @@ Feed entry
         "municipal": "string"
       }
     ],
+     "contactList": [
+        {
+           "name": "string",
+           "email": "string",
+           "phone": "string",
+           "role": "string",
+           "title": "string"
+        }
+     ],
     "title": "string",
     "description": "string",
     "sourceurl": "string",
