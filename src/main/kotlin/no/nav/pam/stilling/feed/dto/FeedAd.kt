@@ -98,7 +98,7 @@ fun mapAd(source: AdDTO, stillingUrlBase: String?): FeedAd {
         expires = toZonedDateTime(source.expires)!!,
         updated = toZonedDateTime(source.updated)!!,
         workLocations = source.locationList.map { l -> mapLocation(l) },
-        contactList = source.contactList.map { c -> mapContact(c) },
+        contactList = source.contactList?.map { c -> mapContact(c) } ?: emptyList(),
         title = source.title ?: "",
         description = source.properties["adtext"] ?: "",
         sourceurl = source.properties["sourceurl"] ?: "",
