@@ -6,8 +6,6 @@ import no.nav.pam.stilling.feed.config.TxTemplate
 import no.nav.pam.stilling.feed.dto.Feed
 import no.nav.pam.stilling.feed.dto.FeedItem
 import no.nav.pam.stilling.feed.dto.FeedPageItem
-import no.nav.pam.stilling.feed.dto.KonsumentDTO
-import org.slf4j.LoggerFactory
 import java.sql.PreparedStatement
 import java.sql.Timestamp
 import java.time.ZoneId
@@ -38,6 +36,15 @@ class FeedRepository(private val txTemplate: TxTemplate) {
             return@doInTransaction numRows
         }
     }
+
+    fun oppdaterFeedItemJson(id: UUID, oppdatertJson: String, txContext: TxContext? = null) =
+        txTemplate.doInTransaction(txContext) { ctx ->
+            return@doInTransaction ctx.connection().prepareStatement("UPDATE feed_item SET json = ? WHERE id = ?")
+                .apply {
+                    this.setString(1, oppdatertJson)
+                    this.setObject(2, id)
+                }.executeUpdate()
+        } ?: 0
 
     fun hentFeedItem(id: UUID, txContext: TxContext? = null): FeedItem? {
         return txTemplate.doInTransaction(txContext) { ctx ->

@@ -12,15 +12,12 @@ import org.slf4j.LoggerFactory
 import java.util.*
 
 class KafkaConfig(private val env: Map<String, String>) {
-    private val topic = env.variable("STILLING_INTERN_TOPIC")
-    private val inboundGroupId = env.variable("STILLING_INTERN_GROUP_ID")
-
     companion object {
         private val LOG = LoggerFactory.getLogger(KafkaConfig::class.java)
     }
 
-    fun kafkaConsumer() : KafkaConsumer<String?, ByteArray?> {
-        val consumer: KafkaConsumer<String?, ByteArray?> = KafkaConsumer(kafkaConsumerProperties())
+    fun kafkaConsumer(topic: String, groupId: String) : KafkaConsumer<String?, ByteArray?> {
+        val consumer: KafkaConsumer<String?, ByteArray?> = KafkaConsumer(kafkaConsumerProperties(groupId))
 
         consumer.subscribe(Collections.singleton(topic), object : ConsumerRebalanceListener {
             override fun onPartitionsRevoked(partitions: Collection<TopicPartition?>) {
@@ -40,7 +37,7 @@ class KafkaConfig(private val env: Map<String, String>) {
 
         return consumer
     }
-    fun kafkaConsumerProperties(): Map<String, Any> {
+    fun kafkaConsumerProperties(groupId: String): Map<String, Any> {
         val clientId = "PamStillingFeed"
         val autoOffsetResetConfig = "earliest"
 
@@ -59,7 +56,7 @@ class KafkaConfig(private val env: Map<String, String>) {
         env["KAFKA_KEYSTORE_PATH"]?.let { props[SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG] = it }
         env["KAFKA_TRUSTSTORE_PATH"]?.let { props[CommonClientConfigs.SECURITY_PROTOCOL_CONFIG] = "SSL" }
 
-        props[ConsumerConfig.GROUP_ID_CONFIG] = inboundGroupId
+        props[ConsumerConfig.GROUP_ID_CONFIG] = groupId
         props[ConsumerConfig.CLIENT_ID_CONFIG] = clientId
         props[ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG] = ByteArrayDeserializer::class.java.name
         props[ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG] = StringDeserializer::class.java.name

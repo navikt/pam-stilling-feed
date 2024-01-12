@@ -50,7 +50,8 @@ private val env = mutableMapOf(
     "PRIVATE_SECRET" to "SuperHemmeligNøkkel",
     "STILLING_URL_BASE" to "https://arbeidsplassen.nav.no/stillinger/stilling",
     "KAFKA_BROKERS" to lokalKafka.bootstrapServers,
-    "TILGANGSSTYRING_ENABLED" to "true"
+    "TILGANGSSTYRING_ENABLED" to "true",
+    "REKJØR_DETALJER_ENABLED" to "false"
 )
 
 fun getLokalEnv() = env
