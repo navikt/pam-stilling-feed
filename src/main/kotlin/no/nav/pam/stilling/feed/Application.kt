@@ -88,8 +88,8 @@ fun startApp(
         1000 * 60 * 30 // Refresher denylist en gang hver halvtime
     )
 
-    if (env.variable("REKJØR_DETALJER_ENABLED").toBooleanStrict()) {
-        val rekjørDetaljerKafkaConsumer = kafkaConfig.kafkaConsumer(env.variable("STILLING_INTERN_TOPIC"), env.variable("REKJØR_DETALJER_GROUP_ID"))
+    if (env.variable("REKJOR_DETALJER_ENABLED").toBooleanStrict()) {
+        val rekjørDetaljerKafkaConsumer = kafkaConfig.kafkaConsumer(env.variable("STILLING_INTERN_TOPIC"), env.variable("REKJOR_DETALJER_GROUP_ID"))
         val stillingDetaljerListener = KafkaStillingDetaljerListener(rekjørDetaljerKafkaConsumer, feedService, healthService)
         stillingDetaljerListener.startListener()
     }
