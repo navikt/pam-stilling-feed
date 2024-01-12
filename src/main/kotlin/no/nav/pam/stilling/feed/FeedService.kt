@@ -84,6 +84,19 @@ class FeedService(
         }!!
     }
 
+    fun lagreOppdaterteDetaljer(annonser: List<AdDTO>, txContext: TxContext? = null) = annonser.map { ad ->
+        val annonse =
+            if (!adSkalMaskeres(ad)) ad
+            else ad.copy(title = "...", contactList = mutableListOf(), employer = null, businessName = "")
+
+        return@map txTemplate.doInTransaction(txContext) { ctx ->
+            val feedAd = mapAd(annonse, stillingUrlBase)
+            val active = annonse.status == "ACTIVE"
+            val feedJson = if (active) objectMapper.writeValueAsString(feedAd) else ""
+            feedRepository.oppdaterFeedItemJson(UUID.fromString(annonse.uuid), feedJson, ctx)
+        }
+    }.filterNotNull().sum()
+
     fun lagreNyeStillingsAnnonser(ads: List<AdDTO>, txContext: TxContext? = null): List<Pair<FeedItem, FeedPageItem>> {
         return txTemplate.doInTransaction(txContext) { ctx ->
             val items = ads.map { ad ->

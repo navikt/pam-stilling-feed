@@ -58,3 +58,7 @@ spec:
       value: "{{ stilling_url_base }}"
     - name: TILGANGSSTYRING_ENABLED
       value: "{{ tilgangsstyring_enabled }}"
+    - name: REKJOR_DETALJER_ENABLED
+      value: "{{ rekjor_detaljer_enabled }}"
+    - name: REKJOR_DETALJER_GROUP_ID
+      value: "{{ rekjor_detaljer_group_id }}"

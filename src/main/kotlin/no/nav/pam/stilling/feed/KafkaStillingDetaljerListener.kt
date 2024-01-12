@@ -1,5 +1,7 @@
 package no.nav.pam.stilling.feed
 
+import com.fasterxml.jackson.module.kotlin.readValue
+import no.nav.pam.stilling.feed.dto.AdDTO
 import org.apache.kafka.clients.consumer.ConsumerRecords
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.KafkaException
@@ -10,7 +12,7 @@ import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.concurrent.thread
 
-class KafkaStillingListener(
+class KafkaStillingDetaljerListener(
     private val kafkaConsumer: KafkaConsumer<String?, ByteArray?>,
     private val feedService: FeedService,
     private val healthService: HealthService
@@ -24,22 +26,22 @@ class KafkaStillingListener(
     }
 
     private fun startListenerInternal() {
-        LOG.info("Starter Kafka stilling listener")
+        LOG.info("Starter Kafka listener for repopulering av detaljer")
         var records: ConsumerRecords<String?, ByteArray?>? = null
         val rollbackCounter = AtomicInteger(0)
         while (true) {
             try {
                 records = kafkaConsumer.poll(Duration.ofSeconds(10))
                 if (records.count() > 0) {
-                    LOG.info("KafkaStillingListener leste ${records.count()} rader. Keys: {}", records.mapNotNull { it.key() }.joinToString())
+                    LOG.info("KafkaStillingDetaljerListener leste ${records.count()} rader. Keys: {}", records.mapNotNull { it.key() }.joinToString())
                     handleRecords(records!!)
                     kafkaConsumer.commitSync()
                 }
             } catch (e: AuthorizationException) {
-                LOG.error("KafkaStillingListener - AuthorizationException i consumerloop, restarter app ${e.message}", e)
+                LOG.error("KafkaStillingDetaljerListener - AuthorizationException i consumerloop, restarter app ${e.message}", e)
                 healthService.addUnhealthyVote()
             } catch (ke: KafkaException) {
-                LOG.error("KafkaStillingListener - KafkaException occurred in consumeLoop", ke)
+                LOG.error("KafkaStillingDetaljerListener - KafkaException occurred in consumeLoop", ke)
                 // Enten så ruller vi tilbake, eller så dreper vi appen - uvisst hva som er best strategi?
                 // Rollback har potensiale for å sende svært mange meldinger til topicet på veldig kort tid
                 // Har derfor lagt inn en grense på 10 rollback før appen omstartes. Det er fortsatt potensiale
@@ -48,7 +50,7 @@ class KafkaStillingListener(
                 else rollback(records!!, kafkaConsumer, rollbackCounter)
             } catch (e: Exception) {
                 // Catchall - impliserer at vi skal restarte app
-                LOG.error("KafkaStillingListener - Uventet Exception i consumerloop, restarter app ${e.message}", e)
+                LOG.error("KafkaStillingDetaljerListener - Uventet Exception i consumerloop, restarter app ${e.message}", e)
                 healthService.addUnhealthyVote()
             }
         }
@@ -70,22 +72,22 @@ class KafkaStillingListener(
             }
             firstOffsets.forEach { entry ->
                 for (partitionOffset in entry.value) {
-                    LOG.info("KafkaStillingListener - Ruller tilbake ${entry.key} partition ${partitionOffset.key} til ${partitionOffset.value}")
+                    LOG.info("KafkaStillingDetaljerListener - Ruller tilbake ${entry.key} partition ${partitionOffset.key} til ${partitionOffset.value}")
                     kafkaConsumer.seek(TopicPartition(entry.key, partitionOffset.key), partitionOffset.value)
                 }
             }
             rollbackCounter.addAndGet(1)
         } catch (e: Exception) {
-            LOG.error("KafkaStillingListener - Rollback feilet, restarter appen", e)
+            LOG.error("KafkaStillingDetaljerListener - Rollback feilet, restarter appen", e)
             healthService.addUnhealthyVote()
         }
     }
 
     fun handleRecords(records: ConsumerRecords<String?, ByteArray?>) {
         val adIds = records.mapNotNull { it.key() }.toList()
-        LOG.info("KafkaStillingListener - Mottar ${records.count()} records med stillingsannonser: {}", adIds.joinToString(", "))
+        LOG.info("KafkaStillingDetaljerListener - Mottar ${records.count()} records med stillingsannonser: {}", adIds.joinToString(", "))
 
-        val ads = records.mapNotNull { String(it.value()!!) }
-        feedService.lagreNyeStillingsAnnonserFraJson(ads)
+        val ads = records.mapNotNull { it.value() }.map { objectMapper.readValue<AdDTO>(it) }
+        feedService.lagreOppdaterteDetaljer(ads)
     }
 }

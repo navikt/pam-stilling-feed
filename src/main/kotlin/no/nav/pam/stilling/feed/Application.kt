@@ -61,7 +61,8 @@ fun startApp(
     val tokenService = TokenService(tokenRepository, txTemplate)
     val tokenController = TokenController(securityConfig, tokenService)
     val healthService = HealthService()
-    val kafkaConsumer = KafkaConfig(env).kafkaConsumer()
+    val kafkaConfig = KafkaConfig(env)
+    val kafkaConsumer = kafkaConfig.kafkaConsumer(env.variable("STILLING_INTERN_TOPIC"), env.variable("STILLING_INTERN_GROUP_ID"))
     val feedRepository = FeedRepository(txTemplate)
     val feedService = FeedService(feedRepository, txTemplate, objectMapper,
         env["STILLING_URL_BASE"] ?: "https://arbeidsplassen.nav.no/stillinger/stilling")
@@ -86,6 +87,12 @@ fun startApp(
         0L,
         1000 * 60 * 30 // Refresher denylist en gang hver halvtime
     )
+
+    if (env.variable("REKJOR_DETALJER_ENABLED").toBooleanStrict()) {
+        val rekjørDetaljerKafkaConsumer = kafkaConfig.kafkaConsumer(env.variable("STILLING_INTERN_TOPIC"), env.variable("REKJOR_DETALJER_GROUP_ID"))
+        val stillingDetaljerListener = KafkaStillingDetaljerListener(rekjørDetaljerKafkaConsumer, feedService, healthService)
+        stillingDetaljerListener.startListener()
+    }
 
     return kafkaListener.startListener()
 }
