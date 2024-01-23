@@ -1,4 +1,4 @@
-FROM ghcr.io/navikt/baseimages/temurin:19
+FROM ghcr.io/navikt/baseimages/temurin:21
 
 COPY build/libs/pam-stilling-feed-all.jar ./app.jar
 EXPOSE 8080
