@@ -1,6 +1,6 @@
 plugins {
-    kotlin("jvm") version "1.8.20"
-    kotlin("kapt") version "1.8.20"
+    kotlin("jvm") version "1.9.21"
+    kotlin("kapt") version "1.9.21"
     id("com.github.johnrengelman.shadow") version "8.1.1"
     application
 }
@@ -25,23 +25,24 @@ tasks.test {
 
 dependencies {
     implementation(kotlin("stdlib"))
-    implementation("io.javalin:javalin:5.4.2")
-    implementation("io.javalin:javalin-micrometer:5.4.2")
+    implementation("io.javalin:javalin:5.6.3")
+    implementation("io.javalin:javalin-micrometer:5.6.3")
     implementation("org.eclipse.jetty:jetty-util")
-    implementation("io.micrometer:micrometer-core:1.10.6")
-    implementation("io.micrometer:micrometer-registry-prometheus:1.10.6")
+    implementation("io.micrometer:micrometer-core:1.12.0")
+    implementation("io.micrometer:micrometer-registry-prometheus:1.12.0")
 
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.14.2")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.14.2")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.16.0")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.16.0")
 
-    implementation("ch.qos.logback:logback-classic:1.4.6")
-    implementation("net.logstash.logback:logstash-logback-encoder:7.3")
+    implementation("ch.qos.logback:logback-classic:1.4.14")
+    implementation("net.logstash.logback:logstash-logback-encoder:7.4")
     implementation("com.auth0:java-jwt:4.4.0")
-    implementation("org.flywaydb:flyway-core:9.16.3")
-    implementation("org.postgresql:postgresql:42.6.0")
-    implementation("com.zaxxer:HikariCP:5.0.1")
+    implementation("org.flywaydb:flyway-core:10.2.0")
+    implementation("org.flywaydb:flyway-database-postgresql:10.2.0")
+    implementation("org.postgresql:postgresql:42.7.1")
+    implementation("com.zaxxer:HikariCP:5.1.0")
 
-    implementation("org.apache.kafka:kafka-clients:3.4.0")
+    implementation("org.apache.kafka:kafka-clients:3.6.1")
 
     implementation("no.nav.arbeid.pam:pam-styrk-yrkeskategori-mapper:1.20211115-2b77b5e0")
 
@@ -53,9 +54,9 @@ dependencies {
 
     testImplementation(kotlin("test"))
     testImplementation("org.assertj:assertj-core:3.24.2")
-    testImplementation("org.testcontainers:testcontainers:1.18.0")
-    testImplementation("org.testcontainers:kafka:1.18.0")
-    testImplementation("org.testcontainers:postgresql:1.18.0")
-    testImplementation("org.testcontainers:junit-jupiter:1.18.0")
-    testImplementation("io.mockk:mockk:1.13.5")
+    testImplementation("org.testcontainers:testcontainers:1.19.3")
+    testImplementation("org.testcontainers:kafka:1.19.3")
+    testImplementation("org.testcontainers:postgresql:1.19.3")
+    testImplementation("org.testcontainers:junit-jupiter:1.19.3")
+    testImplementation("io.mockk:mockk:1.13.8")
 }
