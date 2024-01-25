@@ -33,7 +33,7 @@ the [terms of use](https://arbeidsplassen.nav.no/avtale-stilling-feed). However,
 authentication using a signed JWT token.
 
 In order to receive a private token, you need to be registered as a consumer.
-Please provide us with a written confirmation that you agree to the terms of use as described above, as well 
+Please provide us with a written confirmation that you agree to the terms of use as described above, as well
 the following information by email
 to [nav.team.arbeidsplassen@nav.no](mailto:nav.team.arbeidsplassen@nav.no):
 
@@ -49,7 +49,7 @@ The API is not publicly open, all requests need to be authenticated using the HT
 Example:
 
 ```
-GET https://arbeidsplassen.nav.no/stillinger-feed/api/v1/feed
+GET https://pam-stilling-feed.nav.no/api/v1/feed
 Accept: application/json
 Authorization: Bearer <your secret key>
 ```
