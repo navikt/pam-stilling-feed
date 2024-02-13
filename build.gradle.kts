@@ -1,3 +1,5 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
 plugins {
     kotlin("jvm") version "1.9.21"
     kotlin("kapt") version "1.9.21"
@@ -21,6 +23,10 @@ repositories {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+tasks.withType<ShadowJar>{
+    mergeServiceFiles()
 }
 
 dependencies {
