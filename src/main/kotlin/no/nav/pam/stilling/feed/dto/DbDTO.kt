@@ -9,7 +9,8 @@ data class FeedItem(
     val uuid: UUID,
     val json: String,
     val sistEndret: ZonedDateTime,
-    val status: String
+    val status: String,
+    val kilde: String?
 ) {
     companion object {
         fun fraDatabase(rs: ResultSet, prefix: String = "") = FeedItem(
@@ -17,6 +18,7 @@ data class FeedItem(
             json = rs.getString("${prefix}json"),
             sistEndret = rs.getTimestamp("${prefix}sist_endret").toInstant().atZone(ZoneId.of("Europe/Oslo")),
             status = rs.getString("${prefix}status"),
+            kilde = rs.getString("${prefix}kilde")
         )
     }
 }
