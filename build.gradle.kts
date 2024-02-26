@@ -45,7 +45,7 @@ dependencies {
     implementation("com.auth0:java-jwt:4.4.0")
     implementation("org.flywaydb:flyway-core:10.2.0")
     implementation("org.flywaydb:flyway-database-postgresql:10.2.0")
-    implementation("org.postgresql:postgresql:42.7.1")
+    implementation("org.postgresql:postgresql:42.7.2")
     implementation("com.zaxxer:HikariCP:5.1.0")
 
     implementation("org.apache.kafka:kafka-clients:3.6.1")
