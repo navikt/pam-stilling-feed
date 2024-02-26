@@ -45,7 +45,7 @@ dependencies {
     implementation("com.auth0:java-jwt:4.4.0")
     implementation("org.flywaydb:flyway-core:10.2.0")
     implementation("org.flywaydb:flyway-database-postgresql:10.2.0")
-    implementation("org.postgresql:postgresql:42.7.1")
+    implementation("org.postgresql:postgresql:42.7.2")
     implementation("com.zaxxer:HikariCP:5.1.0")
 
     implementation("org.apache.kafka:kafka-clients:3.6.1")
@@ -53,16 +53,16 @@ dependencies {
     implementation("no.nav.arbeid.pam:pam-styrk-yrkeskategori-mapper:1.20211115-2b77b5e0")
 
     // OpenApi
-    kapt("io.javalin.community.openapi:openapi-annotation-processor:5.5.0-1")
-    implementation("io.javalin.community.openapi:javalin-openapi-plugin:5.5.0-1") // for /openapi route with JSON scheme
-    implementation("io.javalin.community.openapi:javalin-swagger-plugin:5.5.0-1") // for Swagger UI
-    implementation("io.javalin.community.openapi:javalin-redoc-plugin:5.5.0-1") // for ReDoc UI
+    kapt("io.javalin.community.openapi:openapi-annotation-processor:5.6.3-3")
+    implementation("io.javalin.community.openapi:javalin-openapi-plugin:5.6.3-3") // for /openapi route with JSON scheme
+    implementation("io.javalin.community.openapi:javalin-swagger-plugin:5.6.3-3") // for Swagger UI
+    implementation("io.javalin.community.openapi:javalin-redoc-plugin:5.6.3-3") // for ReDoc UI
 
     testImplementation(kotlin("test"))
     testImplementation("org.assertj:assertj-core:3.24.2")
-    testImplementation("org.testcontainers:testcontainers:1.19.3")
-    testImplementation("org.testcontainers:kafka:1.19.3")
-    testImplementation("org.testcontainers:postgresql:1.19.3")
-    testImplementation("org.testcontainers:junit-jupiter:1.19.3")
+    testImplementation("org.testcontainers:testcontainers:1.19.6")
+    testImplementation("org.testcontainers:kafka:1.19.6")
+    testImplementation("org.testcontainers:postgresql:1.19.6")
+    testImplementation("org.testcontainers:junit-jupiter:1.19.6")
     testImplementation("io.mockk:mockk:1.13.8")
 }
