@@ -16,12 +16,13 @@ class FeedRepository(private val txTemplate: TxTemplate) {
     fun lagreFeedItem(feedItem: FeedItem, txContext: TxContext? = null): Int? {
         return txTemplate.doInTransaction(txContext) { ctx ->
             val sql = """
-                insert into feed_item(id, json, sist_endret, status) 
-                values(?, ?, ?, ?)
+                insert into feed_item(id, json, sist_endret, status, kilde)
+                values(?, ?, ?, ?, ?)
                 on conflict(id) do update
                 set json = EXCLUDED.json,
                     sist_endret = EXCLUDED.sist_endret,
-                    status = EXCLUDED.status
+                    status = EXCLUDED.status,
+                    kilde = EXCLUDED.kilde
             """.trimIndent()
             val c = ctx.connection()
             var numRows = 0
@@ -30,6 +31,7 @@ class FeedRepository(private val txTemplate: TxTemplate) {
                 this.setString(2, feedItem.json)
                 this.setTimestamp(3, Timestamp(feedItem.sistEndret.toInstant().toEpochMilli()))
                 this.setString(4, feedItem.status)
+                this.setString(5, feedItem.kilde)
             }.use { statement ->
                 numRows = statement.executeUpdate()
             }
@@ -46,12 +48,30 @@ class FeedRepository(private val txTemplate: TxTemplate) {
                 }.executeUpdate()
         } ?: 0
 
-    fun hentFeedItem(id: UUID, txContext: TxContext? = null): FeedItem? {
+    fun oppdaterKildeForFeedItem(id: UUID, kilde: String, txContext: TxContext? = null) = txTemplate.doInTransaction(txContext) { ctx ->
+        val connection = ctx.connection()
+        var updated = 0
+
+        updated += connection.prepareStatement("UPDATE feed_item SET kilde = ? WHERE id = ?").apply {
+            this.setString(1, kilde)
+            this.setObject(2, id)
+        }.executeUpdate()
+
+        updated += connection.prepareStatement("UPDATE feed_page_item SET kilde = ? WHERE feed_item_id = ?").apply {
+            this.setString(1, kilde)
+            this.setObject(2, id)
+        }.executeUpdate()
+
+        return@doInTransaction updated
+    } ?: 0
+
+    fun hentFeedItem(id: UUID, skalIgnorereFinn: Boolean, txContext: TxContext? = null): FeedItem? {
         return txTemplate.doInTransaction(txContext) { ctx ->
+            val ignorerFinnClause = if (skalIgnorereFinn) " and kilde != 'FINN'" else ""
             val sql = """
-                select id, json, sist_endret, status
+                select id, json, sist_endret, status, kilde
                 from feed_item
-                where id = ?
+                where id = ? $ignorerFinnClause
             """.trimIndent()
             val c = ctx.connection()
             c.prepareStatement(sql).apply {
@@ -65,11 +85,11 @@ class FeedRepository(private val txTemplate: TxTemplate) {
         }
     }
 
-    fun lagreFeedPageItem(feedPage: FeedPageItem, txContext: TxContext? = null): FeedPageItem {
+    fun lagreFeedPageItem(feedPage: FeedPageItem, kilde: String?, txContext: TxContext? = null): FeedPageItem {
         return txTemplate.doInTransaction(txContext) { ctx ->
             val sql = """
-                insert into feed_page_item(id, status, title, business_name, municipal, feed_item_id) 
-                values(?, ?, ?, ?, ?, ?)
+                insert into feed_page_item(id, status, title, business_name, municipal, feed_item_id, kilde)
+                values(?, ?, ?, ?, ?, ?, ?)
                 returning sist_endret, seq_no
             """.trimIndent()
             val c = ctx.connection()
@@ -81,6 +101,7 @@ class FeedRepository(private val txTemplate: TxTemplate) {
                 this.setString(4, feedPage.businessName)
                 this.setString(5, feedPage.municipal)
                 this.setObject(6, feedPage.feedItemId)
+                this.setString(7, kilde)
             }.use { statement ->
                 val rs = statement.executeQuery()
                 if (rs.next()) {
@@ -93,12 +114,13 @@ class FeedRepository(private val txTemplate: TxTemplate) {
         }!!
     }
 
-    fun hentFeedPageItem(id: UUID, txContext: TxContext? = null): FeedPageItem? {
+    fun hentFeedPageItem(id: UUID, skalIgnorereFinn: Boolean, txContext: TxContext? = null): FeedPageItem? {
         return txTemplate.doInTransaction(txContext) { ctx ->
+            val ignorerFinnClause = if (skalIgnorereFinn) " and kilde != 'FINN'" else ""
             val sql = """
                 select id, sist_endret, seq_no, status, title, business_name, municipal, feed_item_id
                 from feed_page_item
-                where id = ?
+                where id = ? $ignorerFinnClause
             """.trimIndent()
             val c = ctx.connection()
 
@@ -116,12 +138,15 @@ class FeedRepository(private val txTemplate: TxTemplate) {
     fun hentFeedPageItemsNyereEnn(
         seqNo: Long, antall: Int = Feed.defaultPageSize,
         sistEndret: ZonedDateTime? = null,
+        skalIgnorereFinn: Boolean,
         txContext: TxContext? = null
     ): MutableList<FeedPageItem> {
         return txTemplate.doInTransaction(txContext) { ctx ->
             val feedPageItems = mutableListOf<FeedPageItem>()
             // NB: Dette garanterer ikke at vi har monotont stigende sist_endret...
             var sistEndretClause = ""
+            val ignorerFinnClause = if (skalIgnorereFinn) " and kilde != 'FINN'" else ""
+
             val params = mutableMapOf<String, (pstmt: PreparedStatement, pos: Int) -> Unit>(
                 Pair(":seq_no:") { pstmt, pos -> pstmt.setObject(pos, seqNo) },
                 Pair(":antall:") { pstmt, pos -> pstmt.setInt(pos, antall) }
@@ -135,7 +160,7 @@ class FeedRepository(private val txTemplate: TxTemplate) {
             val sql = """
                 select id, sist_endret, seq_no, status, title, business_name, municipal, feed_item_id
                 from feed_page_item
-                where seq_no > :seq_no: $sistEndretClause
+                where seq_no > :seq_no: $sistEndretClause $ignorerFinnClause
                 order by seq_no
                 limit :antall:
             """.trimIndent()
@@ -149,12 +174,14 @@ class FeedRepository(private val txTemplate: TxTemplate) {
         }!!
     }
 
-    fun hentFørsteSide(txContext: TxContext? = null): FeedPageItem? {
+    fun hentFørsteSide(skalIgnorereFinn: Boolean, txContext: TxContext? = null): FeedPageItem? {
         return txTemplate.doInTransaction(txContext) { ctx ->
+            val ignorerFinnClause = if (skalIgnorereFinn) " and kilde != 'FINN'" else ""
+
             val sql = """
                 select id, sist_endret, seq_no, status, title, business_name, municipal, feed_item_id
                 from feed_page_item
-                where seq_no in (select min(f2.seq_no) from feed_page_item f2)
+                where seq_no in (select min(f2.seq_no) from feed_page_item f2) $ignorerFinnClause
             """.trimIndent()
             val c = ctx.connection()
             c.prepareStatement(sql).use { statement ->
@@ -165,12 +192,14 @@ class FeedRepository(private val txTemplate: TxTemplate) {
         }
     }
 
-    fun hentSisteSide(txContext: TxContext? = null): FeedPageItem? {
+    fun hentSisteSide(skalIgnorereFinn: Boolean, txContext: TxContext? = null): FeedPageItem? {
         return txTemplate.doInTransaction(txContext) { ctx ->
+            val ignorerFinnClause = if (skalIgnorereFinn) " and kilde != 'FINN'" else ""
+
             val sql = """
                 select id, sist_endret, seq_no, status, title, business_name, municipal, feed_item_id
                 from feed_page_item
-                where seq_no in (select max(f2.seq_no) from feed_page_item f2)
+                where seq_no in (select max(f2.seq_no) from feed_page_item f2) $ignorerFinnClause
             """.trimIndent()
             val c = ctx.connection()
             c.prepareStatement(sql).use { statement ->
@@ -181,12 +210,14 @@ class FeedRepository(private val txTemplate: TxTemplate) {
         }
     }
 
-    fun hentFørsteSideNyereEnn(cutoff: ZonedDateTime, txContext: TxContext? = null) =
+    fun hentFørsteSideNyereEnn(cutoff: ZonedDateTime, skalIgnorereFinn: Boolean, txContext: TxContext? = null) =
         txTemplate.doInTransaction(txContext) { ctx ->
+            val ignorerFinnClause = if (skalIgnorereFinn) " and kilde != 'FINN'" else ""
+
             val sql = """
                 select id, sist_endret, seq_no, status, title, business_name, municipal, feed_item_id
                 from feed_page_item
-                where seq_no in (select min(f2.seq_no) from feed_page_item f2 where sist_endret > ?)
+                where seq_no in (select min(f2.seq_no) from feed_page_item f2 where sist_endret > ?) $ignorerFinnClause
             """.trimIndent()
 
             ctx.connection()

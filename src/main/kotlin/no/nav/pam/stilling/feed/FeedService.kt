@@ -18,7 +18,7 @@ class FeedService(
     companion object {
         private val LOG = LoggerFactory.getLogger(FeedService::class.java)
         private val urlPrefix = "/api/v1"
-        private val SKAL_IGNORERE_FINN_ANNONSER = false // TODO skal vi ignorere FINN annonser?
+        private val SKAL_IGNORERE_FINN_ANNONSER = true
     }
 
     fun lagreNyStillingsAnnonseFraJson(jsonAnnonse: String, txContext: TxContext? = null) : Pair<FeedItem, FeedPageItem> {
@@ -39,10 +39,7 @@ class FeedService(
             if (!adSkalMaskeres(newAd)) newAd
             else newAd.copy(title = "...", contactList = mutableListOf(), employer = null, businessName = "")
 
-        if (SKAL_IGNORERE_FINN_ANNONSER && ad.source == "FINN") {
-            LOG.info("Ignorerer annonse ${ad.uuid} siden det er en finn annonse")
-            return null
-        } else if (ad.publishedByAdmin == null) {
+        if (ad.publishedByAdmin == null) {
             LOG.info("Ignorerer annonse ${ad.uuid} siden den ikke er publisert ennå")
             return null
         }
@@ -57,7 +54,8 @@ class FeedService(
                 uuid = UUID.fromString(ad.uuid),
                 json = feedJson,
                 sistEndret = ad.updated.atZone(ZoneId.of("Europe/Oslo")),
-                status = statusDescription
+                status = statusDescription,
+                kilde = feedAd.source
             )
             feedRepository.lagreFeedItem(feedItem, ctx)
 
@@ -70,7 +68,7 @@ class FeedService(
                 feedItemId = feedItem.uuid,
                 seqNo = -1
             )
-            val lagretPageItem = feedRepository.lagreFeedPageItem(feedPageItem, ctx)
+            val lagretPageItem = feedRepository.lagreFeedPageItem(feedPageItem, feedAd.source, ctx)
 
             return@doInTransaction Pair(feedItem, lagretPageItem)
         }!!
@@ -97,6 +95,15 @@ class FeedService(
         }
     }.filterNotNull().sum()
 
+    // TODO Fjern denne etter gjennomkjøring, kun midlertidig for å migrere
+    fun lagreKilde(annonser: List<AdDTO>, txContext: TxContext? = null) = annonser.map { ad ->
+        val kilde = ad.source ?: return@map null
+
+        return@map txTemplate.doInTransaction(txContext) { ctx ->
+            feedRepository.oppdaterKildeForFeedItem(UUID.fromString(ad.uuid), kilde, ctx)
+        }
+    }.filterNotNull().sum()
+
     fun lagreNyeStillingsAnnonser(ads: List<AdDTO>, txContext: TxContext? = null): List<Pair<FeedItem, FeedPageItem>> {
         return txTemplate.doInTransaction(txContext) { ctx ->
             val items = ads.map { ad ->
@@ -108,7 +115,7 @@ class FeedService(
 
     fun hentStillingsAnnonse(uuid: UUID, txContext: TxContext? = null): FeedItem? {
         return txTemplate.doInTransaction(txContext) { ctx ->
-            return@doInTransaction feedRepository.hentFeedItem(uuid, ctx)
+            return@doInTransaction feedRepository.hentFeedItem(uuid, SKAL_IGNORERE_FINN_ANNONSER, ctx)
         }
     }
 
@@ -120,10 +127,10 @@ class FeedService(
         txContext: TxContext? = null
     ): Feed? {
         return txTemplate.doInTransaction(txContext) { ctx ->
-            val førsteItem = feedRepository.hentFeedPageItem(id)
+            val førsteItem = feedRepository.hentFeedPageItem(id, SKAL_IGNORERE_FINN_ANNONSER)
 
             førsteItem?.let { f ->
-                val items = feedRepository.hentFeedPageItemsNyereEnn(f.seqNo, sistEndret = sistEndret, antall = antall)
+                val items = feedRepository.hentFeedPageItemsNyereEnn(f.seqNo, sistEndret = sistEndret, antall = antall, skalIgnorereFinn = SKAL_IGNORERE_FINN_ANNONSER)
                 val sisteItem = if (items.size > 0) items[items.size - 1] else førsteItem
                 val sisteItemIPage = if (items.size > 1) items[items.size - 2] else sisteItem
 
@@ -155,18 +162,18 @@ class FeedService(
 
     fun hentFørsteSide(txContext: TxContext? = null): FeedPageItem? {
         return txTemplate.doInTransaction(txContext) { ctx ->
-            return@doInTransaction feedRepository.hentFørsteSide(ctx)
+            return@doInTransaction feedRepository.hentFørsteSide(SKAL_IGNORERE_FINN_ANNONSER, ctx)
         }
     }
 
     fun hentSisteSide(txContext: TxContext? = null): FeedPageItem? {
         return txTemplate.doInTransaction(txContext) { ctx ->
-            return@doInTransaction feedRepository.hentSisteSide(ctx)
+            return@doInTransaction feedRepository.hentSisteSide(SKAL_IGNORERE_FINN_ANNONSER, ctx)
         }
     }
 
     fun hentFørsteSideNyereEnn(cutoff: ZonedDateTime, txContext: TxContext? = null) =
         txTemplate.doInTransaction(txContext) { ctx ->
-            feedRepository.hentFørsteSideNyereEnn(cutoff, ctx)
+            feedRepository.hentFørsteSideNyereEnn(cutoff, SKAL_IGNORERE_FINN_ANNONSER, ctx)
         }
 }
