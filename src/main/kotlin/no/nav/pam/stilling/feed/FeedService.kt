@@ -46,7 +46,7 @@ class FeedService(
 
         return txTemplate.doInTransaction(txContext) { ctx ->
             val feedAd = mapAd(ad, stillingUrlBase)
-            val active = ad.status == "ACTIVE"
+            val active = ad.status == "ACTIVE" && ad.source != "DIR"
             val statusDescription = if (active) "ACTIVE" else "INACTIVE"
             val feedJson = if (active) objectMapper.writeValueAsString(feedAd) else ""
 
@@ -72,6 +72,26 @@ class FeedService(
 
             return@doInTransaction Pair(feedItem, lagretPageItem)
         }!!
+    }
+
+    fun fjernDIRFraFeed() {
+        txTemplate.doInTransaction() { ctx ->
+            val items = feedRepository.hentDirekteMeldteFeedItem() ?: mutableListOf()
+
+            items.forEach { item ->
+                feedRepository.lagreFeedItem(item.copy(status = "INACTIVE", sistEndret = ZonedDateTime.now(), json = ""), ctx)
+                val feedPageItem = FeedPageItem(
+                        id = UUID.randomUUID(),
+                        status = "INACTIVE",
+                        title = "?",
+                        municipal = "?",
+                        businessName = "?",
+                        feedItemId = item.uuid,
+                        seqNo = -1
+                )
+                val lagretPageItem = feedRepository.lagreFeedPageItem(feedPageItem, "DIR", ctx)
+            }
+        }
     }
 
     fun lagreNyeStillingsAnnonserFraJson(jsonAnnonser: List<String>, txContext: TxContext? = null) : List<Pair<FeedItem, FeedPageItem>> {
