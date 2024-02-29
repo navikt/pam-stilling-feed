@@ -46,7 +46,7 @@ class FeedService(
 
         return txTemplate.doInTransaction(txContext) { ctx ->
             val feedAd = mapAd(ad, stillingUrlBase)
-            val active = ad.status == "ACTIVE" || ad.source == "DIR"
+            val active = ad.status == "ACTIVE" && ad.source != "DIR"
             val statusDescription = if (active) "ACTIVE" else "INACTIVE"
             val feedJson = if (active) objectMapper.writeValueAsString(feedAd) else ""
 
