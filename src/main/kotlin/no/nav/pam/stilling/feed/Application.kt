@@ -70,8 +70,6 @@ fun startApp(
     val naisController = NaisController(healthService, prometheusRegistry)
     val kafkaListener = KafkaStillingListener(kafkaConsumer, feedService, healthService)
 
-    feedService.fjernDIRFraFeed()
-
     val javalin = startJavalin(
         port = 8080,
         jsonMapper = JavalinJackson(objectMapper),
