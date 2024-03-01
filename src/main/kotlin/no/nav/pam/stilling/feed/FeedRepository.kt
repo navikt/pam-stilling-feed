@@ -85,25 +85,6 @@ class FeedRepository(private val txTemplate: TxTemplate) {
         }
     }
 
-    fun hentDirekteMeldteFeedItem(txContext: TxContext? = null): MutableList<FeedItem>? {
-        return txTemplate.doInTransaction(txContext) { ctx ->
-            val sql = """
-                select id, json, sist_endret, status, kilde
-                from feed_item
-                where kilde='DIR' and status='ACTIVE' 
-            """.trimIndent()
-            val c = ctx.connection()
-            c.prepareStatement(sql).apply {
-            }.use { statement ->
-                val resultSet = statement.executeQuery()
-                val items = mutableListOf<FeedItem>()
-                while (resultSet.next())
-                    items.add(FeedItem.fraDatabase(resultSet))
-                return@doInTransaction items
-            }
-        }
-    }
-
     fun lagreFeedPageItem(feedPage: FeedPageItem, kilde: String?, txContext: TxContext? = null): FeedPageItem {
         return txTemplate.doInTransaction(txContext) { ctx ->
             val sql = """

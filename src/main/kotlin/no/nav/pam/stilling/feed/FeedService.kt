@@ -42,6 +42,9 @@ class FeedService(
         if (ad.publishedByAdmin == null) {
             LOG.info("Ignorerer annonse ${ad.uuid} siden den ikke er publisert ennå")
             return null
+        } else if (ad.source == "DIR") {
+            LOG.info("Ignorerer annonse ${ad.uuid} siden den er direktemeldt")
+            return null
         }
 
         return txTemplate.doInTransaction(txContext) { ctx ->
@@ -72,26 +75,6 @@ class FeedService(
 
             return@doInTransaction Pair(feedItem, lagretPageItem)
         }!!
-    }
-
-    fun fjernDIRFraFeed() {
-        txTemplate.doInTransaction() { ctx ->
-            val items = feedRepository.hentDirekteMeldteFeedItem() ?: mutableListOf()
-
-            items.forEach { item ->
-                feedRepository.lagreFeedItem(item.copy(status = "INACTIVE", sistEndret = ZonedDateTime.now(), json = ""), ctx)
-                val feedPageItem = FeedPageItem(
-                        id = UUID.randomUUID(),
-                        status = "INACTIVE",
-                        title = "?",
-                        municipal = "?",
-                        businessName = "?",
-                        feedItemId = item.uuid,
-                        seqNo = -1
-                )
-                val lagretPageItem = feedRepository.lagreFeedPageItem(feedPageItem, "DIR", ctx)
-            }
-        }
     }
 
     fun lagreNyeStillingsAnnonserFraJson(jsonAnnonser: List<String>, txContext: TxContext? = null) : List<Pair<FeedItem, FeedPageItem>> {
