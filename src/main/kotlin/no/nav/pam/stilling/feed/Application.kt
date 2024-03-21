@@ -9,9 +9,7 @@ import io.javalin.Javalin
 import io.javalin.http.Context
 import io.javalin.json.JavalinJackson
 import io.javalin.micrometer.MicrometerPlugin
-import io.javalin.openapi.plugin.redoc.ReDocConfiguration
 import io.javalin.openapi.plugin.redoc.ReDocPlugin
-import io.javalin.openapi.plugin.swagger.SwaggerConfiguration
 import io.javalin.openapi.plugin.swagger.SwaggerPlugin
 import io.micrometer.prometheus.PrometheusConfig
 import io.micrometer.prometheus.PrometheusMeterRegistry
@@ -114,27 +112,32 @@ fun startJavalin(
     accessManager: JavalinAccessManager
 ): Javalin {
     val requestLogger = LoggerFactory.getLogger("access")
-    val micrometerPlugin = MicrometerPlugin.create { micrometerConfig ->
+    val micrometerPlugin = MicrometerPlugin { micrometerConfig ->
         micrometerConfig.registry = meterRegistry
     }
 
     return Javalin.create {
-        it.accessManager(accessManager)
         it.requestLogger.http { ctx, ms -> logRequest(ctx, ms, requestLogger) }
         it.http.defaultContentType = "application/json"
         it.jsonMapper(jsonMapper)
-        it.plugins.register(micrometerPlugin)
+        it.registerPlugin(micrometerPlugin)
 
-        it.plugins.register(getOpenApiPlugin())
-        it.plugins.register(SwaggerPlugin(SwaggerConfiguration().apply {
-            roles = arrayOf(Rolle.UNPROTECTED)
-            documentationPath = "/api/openapi.json"
-        }))
-        it.plugins.register(ReDocPlugin(ReDocConfiguration().apply {
-            roles = arrayOf(Rolle.UNPROTECTED)
-            documentationPath = "/api/openapi.json"
-        }))
-    }.start(port)
+        it.registerPlugin(getOpenApiPlugin())
+        it.registerPlugin(SwaggerPlugin { swaggerConfiguration ->
+            swaggerConfiguration.roles = arrayOf(Rolle.UNPROTECTED)
+            swaggerConfiguration.documentationPath = "/api/openapi.json"
+        })
+        it.registerPlugin(ReDocPlugin { reDocConfiguration ->
+            reDocConfiguration.roles = arrayOf(Rolle.UNPROTECTED)
+            reDocConfiguration.documentationPath = "/api/openapi.json"
+        })
+    }.beforeMatched {ctx ->
+        if(ctx.routeRoles().isEmpty()) {
+            return@beforeMatched
+        }
+        accessManager.manage(ctx, ctx.routeRoles())
+    }
+        .start(port)
 }
 
 fun logRequest(ctx: Context, ms: Float, log: Logger) {

@@ -31,11 +31,11 @@ tasks.withType<ShadowJar>{
 
 dependencies {
     implementation(kotlin("stdlib"))
-    implementation("io.javalin:javalin:5.6.3")
-    implementation("io.javalin:javalin-micrometer:5.6.3")
+    implementation("io.javalin:javalin:6.1.3")
+    implementation("io.javalin:javalin-micrometer:6.1.3")
     implementation("org.eclipse.jetty:jetty-util")
-    implementation("io.micrometer:micrometer-core:1.12.0")
-    implementation("io.micrometer:micrometer-registry-prometheus:1.12.0")
+    implementation("io.micrometer:micrometer-core:1.12.4")
+    implementation("io.micrometer:micrometer-registry-prometheus:1.12.4")
 
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.16.0")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.16.0")
@@ -53,10 +53,10 @@ dependencies {
     implementation("no.nav.arbeid.pam:pam-styrk-yrkeskategori-mapper:1.20211115-2b77b5e0")
 
     // OpenApi
-    kapt("io.javalin.community.openapi:openapi-annotation-processor:5.6.3-3")
-    implementation("io.javalin.community.openapi:javalin-openapi-plugin:5.6.3-3") // for /openapi route with JSON scheme
-    implementation("io.javalin.community.openapi:javalin-swagger-plugin:5.6.3-3") // for Swagger UI
-    implementation("io.javalin.community.openapi:javalin-redoc-plugin:5.6.3-3") // for ReDoc UI
+    kapt("io.javalin.community.openapi:openapi-annotation-processor:6.1.3")
+    implementation("io.javalin.community.openapi:javalin-openapi-plugin:6.1.3") // for /openapi route with JSON scheme
+    implementation("io.javalin.community.openapi:javalin-swagger-plugin:6.1.3") // for Swagger UI
+    implementation("io.javalin.community.openapi:javalin-redoc-plugin:6.1.3") // for ReDoc UI
 
     testImplementation(kotlin("test"))
     testImplementation("org.assertj:assertj-core:3.24.2")

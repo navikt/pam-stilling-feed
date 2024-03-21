@@ -8,11 +8,11 @@ Vi trenger følgende informasjon for å registrere en ny konsument:
 * Telefonnummer
 * Kontaktperson
 
-Det finne script for å opprette nye konsumenter og token for en gitt konsument i `./scripts`. Disse går by default mot prod-miljøet. 
+Det finnes script for å opprette nye konsumenter og token for en gitt konsument i `./scripts`. Disse går by default mot prod-miljøet. 
 
 For å bruke disse scriptene må miljøvariablene `PAM_STILLING_FEED_PROD_KEY` og `PAM_STILLING_FEED_DEV_KEY` være satt.  
 
-Variablene må peke på en fil som inneholder henholdsvis prod og dev nøkkel. Disse finner du i Google Secret Manager -> `pam-stilling-feed-admin-keys`.
+Variablene må peke på en fil som inneholder henholdsvis prod og dev nøkkel. Disse finner du under secrets i Nais Console. Både dev og prod ligger under prod-gcp -> `pam-stilling-feed-admin-keys`.
 
 ```bash
 export PAM_STILLING_FEED_PROD_KEY=<path_prod_key>
