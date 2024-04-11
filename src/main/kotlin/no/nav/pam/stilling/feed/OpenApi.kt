@@ -9,49 +9,57 @@ import io.javalin.openapi.OpenApiInfo
 import io.javalin.openapi.OpenApiLicense
 import io.javalin.openapi.plugin.DefinitionConfiguration
 import io.javalin.openapi.plugin.OpenApiPlugin
-import io.javalin.openapi.plugin.OpenApiPluginConfiguration
 import io.javalin.openapi.plugin.SecurityComponentConfiguration
 import no.nav.pam.stilling.feed.sikkerhet.Rolle
 
-fun getOpenApiPlugin() = OpenApiPlugin(OpenApiPluginConfiguration()
-    .withRoles(Rolle.UNPROTECTED)
-    .withDocumentationPath("/api/openapi.json")
-    .withDefinitionConfiguration { _: String, definition: DefinitionConfiguration ->
-        definition
-            .withOpenApiInfo { openApiInfo: OpenApiInfo ->
-                openApiInfo.title = "Public feed of job vacancies on Arbeidsplassen.no"
-                openApiInfo.description = "OpenAPI specification for the public feed of job vacancies on Arbeidsplassen.no provided by the Norwegian Labour and Welfare Administration"
-                openApiInfo.termsOfService = "https://arbeidsplassen.nav.no/avtale-stilling-feed"
-                openApiInfo.version = "v1"
-                openApiInfo.contact = OpenApiContact().apply {
-                    name = "Arbeidsplassen.no"
-                    email = "nav.team.arbeidsplassen@nav.no"
+fun getOpenApiPlugin() = OpenApiPlugin { openApiConfig ->
+    openApiConfig
+        .withRoles(Rolle.UNPROTECTED)
+        .withDocumentationPath("/api/openapi.json")
+        .withDefinitionConfiguration { _: String, definition: DefinitionConfiguration ->
+            definition
+                .withInfo { openApiInfo: OpenApiInfo ->
+                    openApiInfo.title = "Public feed of job vacancies on Arbeidsplassen.no"
+                    openApiInfo.description =
+                        "OpenAPI specification for the public feed of job vacancies on Arbeidsplassen.no provided by the Norwegian Labour and Welfare Administration"
+                    openApiInfo.termsOfService = "https://arbeidsplassen.nav.no/avtale-stilling-feed"
+                    openApiInfo.version = "v1"
+                    openApiInfo.contact = OpenApiContact().apply {
+                        name = "Arbeidsplassen.no"
+                        email = "nav.team.arbeidsplassen@nav.no"
+                    }
+                    openApiInfo.license = OpenApiLicense().apply {
+                        name = "MIT License"
+                        identifier = "MIT"
+                    }
                 }
-                openApiInfo.license = OpenApiLicense().apply {
-                    name = "MIT License"
-                    identifier = "MIT"
+                .withServer { openApiServer ->
+                    // TODO: Endre til prod-miljø når den eksisterer
+                    openApiServer.url = "https://pam-stilling-feed.ekstern.dev.nav.no/"
+                    openApiServer.description = "Arbeidsplassen.dev.no"
                 }
-            }
-            .withServer { openApiServer ->
-                // TODO: Endre til prod-miljø når den eksisterer
-                openApiServer.url = "https://pam-stilling-feed.ekstern.dev.nav.no/"
-                openApiServer.description = "Arbeidsplassen.dev.no"
-            }
-            .withSecurity(SecurityComponentConfiguration().apply {
-                withSecurityScheme("BearerAuth", BearerAuth())
-            })
-            .withDefinitionProcessor { content ->
-                // Javalin OpenApi støtter per nå ikke response-headers så vi må legge de på openApi-specen selv
-                setResponseHeadersDocumentation(content)
+                .withSecurity(SecurityComponentConfiguration().apply {
+                    withSecurityScheme("BearerAuth", BearerAuth())
+                })
+                .withDefinitionProcessor { content ->
+                    // Javalin OpenApi støtter per nå ikke response-headers så vi må legge de på openApi-specen selv
+                    setResponseHeadersDocumentation(content)
 
-                //  Javalin OpenApi tolker per nå ikke @JsonIgnore og @JsonProperty, må håndteres på egenhånd
-                removePropertiesFromSchema(content["components"]["schemas"]["Feed"], "etag", "lastModified")
-                renamePropertiesInSchema(content["components"]["schemas"]["FeedLine"], "feed_entry" to "_feed_entry")
-                renamePropertiesInSchema(content["components"]["schemas"]["FeedEntryContent"], "json" to "ad_content")
+                    //  Javalin OpenApi tolker per nå ikke @JsonIgnore og @JsonProperty, må håndteres på egenhånd
+                    removePropertiesFromSchema(content["components"]["schemas"]["Feed"], "etag", "lastModified")
+                    renamePropertiesInSchema(
+                        content["components"]["schemas"]["FeedLine"],
+                        "feed_entry" to "_feed_entry"
+                    )
+                    renamePropertiesInSchema(
+                        content["components"]["schemas"]["FeedEntryContent"],
+                        "json" to "ad_content"
+                    )
 
-                content.toPrettyString()
-            }
-    })
+                    content.toPrettyString()
+                }
+        }
+}
 
 private fun setResponseHeadersDocumentation(content: ObjectNode) {
     content["paths"].fields().forEachRemaining {
