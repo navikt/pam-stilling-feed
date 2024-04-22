@@ -29,7 +29,7 @@ and [Redoc](https://pam-stilling-feed.ekstern.dev.nav.no/redoc).
 ## Who can use this service?
 
 Anyone can use this API free of charge, but by doing so you agree to
-the [terms of use](https://arbeidsplassen.nav.no/avtale-stilling-feed). However, API is not publicly open and requires
+the [terms of use](https://arbeidsplassen.nav.no/vilkar-api). However, API is not publicly open and requires
 authentication using a signed JWT token.
 
 In order to receive a private token, you need to be registered as a consumer.
