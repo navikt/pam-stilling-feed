@@ -34,9 +34,8 @@ fun getOpenApiPlugin() = OpenApiPlugin { openApiConfig ->
                     }
                 }
                 .withServer { openApiServer ->
-                    // TODO: Endre til prod-miljø når den eksisterer
-                    openApiServer.url = "https://pam-stilling-feed.ekstern.dev.nav.no/"
-                    openApiServer.description = "Arbeidsplassen.dev.no"
+                    openApiServer.url = "https://pam-stilling-feed.nav.no/"
+                    openApiServer.description = "Arbeidsplassen.no"
                 }
                 .withSecurity(SecurityComponentConfiguration().apply {
                     withSecurityScheme("BearerAuth", BearerAuth())
