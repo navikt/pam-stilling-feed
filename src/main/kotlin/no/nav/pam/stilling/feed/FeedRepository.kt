@@ -236,7 +236,7 @@ class FeedRepository(private val txTemplate: TxTemplate) {
             val sql = """
                 select id, sist_endret, seq_no, status, title, business_name, municipal, feed_item_id
                 from feed_page_item
-                where seq_no in (select min(f2.seq_no) from feed_page_item f2 where sist_endret > ?) $ignorerFinnClause
+                where seq_no in (select min(f2.seq_no) from feed_page_item f2 where sist_endret > ? $ignorerFinnClause) $ignorerFinnClause
             """.trimIndent()
 
             ctx.connection()

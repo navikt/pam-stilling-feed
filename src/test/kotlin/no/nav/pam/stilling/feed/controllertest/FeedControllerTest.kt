@@ -101,6 +101,36 @@ class FeedControllerTest {
 
         txTemplate.tømTabeller("feed_page_item")
     }
+    @Test
+    fun `Henter første side oppdatert etter If-Modified-Since med finn annonse først i page`() {
+        txTemplate.tømTabeller("feed_page_item")
+        val adSource = objectMapper.readValue(javaClass.getResourceAsStream("/ad_dto.json"), AdDTO::class.java)
+        val updatedBase = LocalDateTime.of(2024, 5, 20, 22, 0, 0, 0)
+
+        var updatedAt = updatedBase.plusDays(1)
+        var uuid = UUID.randomUUID()
+        val finnAnnonse = feedService.lagreNyStillingsAnnonse(adSource.copy(uuid = uuid.toString(),
+                title = "Annonse oppdatert $updatedAt",
+                updated = updatedAt,
+                source = "FINN"
+        ))
+        oppdaterSistEndretIDatabase(updatedAt, uuid)
+
+        updatedAt = updatedAt.plusDays(1)
+        uuid = UUID.randomUUID()
+        val sblAnnonse = feedService.lagreNyStillingsAnnonse(adSource.copy(uuid = uuid.toString(),
+                title = "Annonse oppdatert $updatedAt",
+                updated = updatedAt,
+                source = "Stillingsregistrering"
+        ))
+        oppdaterSistEndretIDatabase(updatedAt, uuid)
+
+        val page = getFeedPage(lastModified = formatLocalDatetime(updatedBase)).first
+        assertEquals(sblAnnonse!!.first.sistEndret.toLocalDateTime(),
+                page.items.first().date_modified?.toLocalDateTime())
+
+        txTemplate.tømTabeller("feed_page_item")
+    }
 
     private fun getFeedPage(pageId: String = "", etag: String? = null, lastModified: String? = null) : Pair<Feed, HttpHeaders> {
         val response = sendFeedRequest("$lokalUrlBase/api/v1/feed/$pageId", etag, lastModified)
