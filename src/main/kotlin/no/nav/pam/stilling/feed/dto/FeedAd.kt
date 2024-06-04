@@ -112,7 +112,7 @@ fun mapAd(source: AdDTO, stillingUrlBase: String?): FeedAd {
         link = link,
         employer = mapEmployer(source),
         engagementtype = source.properties["engagementtype"] ?: "",
-        extent = source.properties["extent"] ?: "",
+        extent = if (source.properties["extent"]?.lowercase() == "deltid") "Deltid" else "Heltid",
         starttime = source.properties["starttime"] ?: "",
         positioncount = source.properties["positioncount"] ?: "1",
         sector = source.properties["sector"] ?: ""
