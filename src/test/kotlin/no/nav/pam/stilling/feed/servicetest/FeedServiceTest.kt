@@ -66,6 +66,7 @@ class FeedServiceTest {
         val lagretAd1 = feedService.hentStillingsAnnonse(UUID.fromString(ad1.uuid))!!
         val lagretFeedAd = objectMapper.readValue(lagretAd1.json, FeedAd::class.java)
         Assertions.assertThat(lagretFeedAd.title).isEqualTo(ad1_update.title)
+        Assertions.assertThat(lagretFeedAd.extent).isEqualTo("Heltid")
 
         val lagretAd3maskert = feedService.hentStillingsAnnonse(UUID.fromString(ad3maskert.uuid))!!
         Assertions.assertThat(lagretAd3maskert.json).isEmpty()

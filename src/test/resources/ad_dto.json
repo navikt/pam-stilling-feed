@@ -41,7 +41,7 @@
     }
   ],
   "properties": {
-    "extent": "Heltid",
+    "extent": "Heltid_og_Deltid",
     "workhours": "[\"Dagtid\"]",
     "employerhomepage": "https://www.abc.no",
     "workday": "[\"Ukedager\"]",
