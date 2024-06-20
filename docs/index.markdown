@@ -6,11 +6,12 @@ toc: true
 
 ## Introduction
 
-This API provides a feed of job vacancies in Norway available on [Arbeidsplassen.no](https://arbeidsplassen.nav.no) on
-behalf of the Norwegian Labour and Welfare Administration.
+This API provides a feed of job vacancies in Norway. NAV’s Job Database contains a majority of all publicly 
+advertised job vacancies in Norway.
 
-The feed contains all job vacancies that have been posted at [Arbeidsplassen.no](https://arbeidsplassen.nav.no), and
-details about currently active job vacancies.
+This API provides a feed with all the job vacancies we have the opportunity to share. 
+The job vacancies are either directly registered at NAV or obtained through third parties/ATS systems. 
+(vacancies from Finn.no are not included in the API)
 
 Each change to an ad will generate a new entry in the feed, but when querying for the details of a vacancy you will only
 receive the newest data.
