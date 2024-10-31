@@ -50,7 +50,7 @@ dependencies {
 
     implementation("org.apache.kafka:kafka-clients:3.8.0")
 
-    implementation("no.nav.arbeid.pam:pam-styrk-yrkeskategori-mapper:1.20240828-2971bbff")
+    implementation("no.nav.arbeid.pam:pam-styrk-yrkeskategori-mapper:1.20241030-dc26b440")
 
     // OpenApi
     kapt("io.javalin.community.openapi:openapi-annotation-processor:6.3.0")
