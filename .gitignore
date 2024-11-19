@@ -32,5 +32,5 @@ _site
 .jekyll-cache
 .jekyll-metadata
 vendor
-/key_dev.txt
-/key_prod.txt
+key_dev.txt
+key_prod.txt
