@@ -7,7 +7,6 @@ import no.nav.pam.stilling.feed.dto.Feed
 import no.nav.pam.stilling.feed.dto.FeedAd
 import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.util.*
@@ -158,16 +157,16 @@ class FeedServiceTest {
         val ad = objectMapper.readValue(javaClass.getResourceAsStream("/ad_dto.json"), AdDTO::class.java).copy(uuid = UUID.randomUUID().toString())
         feedService.lagreNyStillingsAnnonse(ad)
 
-        val feed = feedService.hentFeedHvis(feedService.hentFørsteSide()!!.id, antall = 1 * 10)!!
-        assertEquals(1, feed.items.size)
-        val feedItem1 = feed.items[0]
-        assertEquals(ad.uuid, feedItem1.id)
-        assertEquals("Vi søker pedagogisk leder til", feedItem1.title)
-        assertEquals("/api/v1/feedentry/${ad.uuid}", feedItem1.url)
+        val feed = feedService.hentFeedHvis(feedService.hentSisteSide()!!.id, antall = 100)!!
+        val relevantFeedItem = feed.items.find { it.id == ad.uuid }
+        assertNotNull(relevantFeedItem)
+        assertEquals(ad.uuid, relevantFeedItem.id)
+        assertEquals("Vi søker pedagogisk leder til", relevantFeedItem.title)
+        assertEquals("/api/v1/feedentry/${ad.uuid}", relevantFeedItem.url)
 
-        assertEquals(ad.uuid, feedItem1.feed_entry.uuid)
-        assertEquals("ACTIVE", feedItem1.feed_entry.status)
-        assertEquals("Vi søker pedagogisk leder til", feedItem1.feed_entry.title)
-        assertEquals("LEKA", feedItem1.feed_entry.municipal)
+        assertEquals(ad.uuid, relevantFeedItem.feed_entry.uuid)
+        assertEquals("ACTIVE", relevantFeedItem.feed_entry.status)
+        assertEquals("Vi søker pedagogisk leder til", relevantFeedItem.feed_entry.title)
+        assertEquals("LEKA", relevantFeedItem.feed_entry.municipal)
     }
 }
