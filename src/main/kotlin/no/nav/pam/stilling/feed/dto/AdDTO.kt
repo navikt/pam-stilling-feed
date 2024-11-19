@@ -14,7 +14,6 @@ data class AdDTO(
     val updatedBy: String? = null,
     val mediaList: MutableList<MediaDTO>? = mutableListOf(),
     val contactList: MutableList<ContactDTO>? = mutableListOf(),
-    val location: LocationDTO? = null,
     val locationList: MutableList<LocationDTO> = mutableListOf(),
     val properties: MutableMap<String, String> = mutableMapOf(),
 

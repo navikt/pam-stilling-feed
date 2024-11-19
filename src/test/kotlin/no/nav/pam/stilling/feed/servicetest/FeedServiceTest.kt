@@ -152,4 +152,22 @@ class FeedServiceTest {
         val feedPage = feedService.hentFeedHvis(feedService.hentFørsteSide()!!.id, antall = antallEksisterendeFeedItems + Feed.defaultPageSize)!!
         assertEquals(2, feedPage.items.size - antallEksisterendeFeedItems)
     }
+
+    @Test
+    fun `Feed viser riktig info om stillinger`() {
+        val ad = objectMapper.readValue(javaClass.getResourceAsStream("/ad_dto.json"), AdDTO::class.java).copy(uuid = UUID.randomUUID().toString())
+        feedService.lagreNyStillingsAnnonse(ad)
+
+        val feed = feedService.hentFeedHvis(feedService.hentFørsteSide()!!.id, antall = 1 * 10)!!
+        assertEquals(1, feed.items.size)
+        val feedItem1 = feed.items[0]
+        assertEquals(ad.uuid, feedItem1.id)
+        assertEquals("Vi søker pedagogisk leder til", feedItem1.title)
+        assertEquals("/api/v1/feedentry/${ad.uuid}", feedItem1.url)
+
+        assertEquals(ad.uuid, feedItem1.feed_entry.uuid)
+        assertEquals("ACTIVE", feedItem1.feed_entry.status)
+        assertEquals("Vi søker pedagogisk leder til", feedItem1.feed_entry.title)
+        assertEquals("LEKA", feedItem1.feed_entry.municipal)
+    }
 }
