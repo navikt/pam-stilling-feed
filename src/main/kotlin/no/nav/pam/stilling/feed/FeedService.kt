@@ -63,7 +63,7 @@ class FeedService(
                 id = UUID.randomUUID(),
                 status = statusDescription,
                 title = ad.title ?: "?",
-                municipal = ad.location?.municipal ?: "?",
+                municipal = ad.locationList.map{ it.municipal }.firstOrNull() ?: "?",
                 businessName = ad.businessName ?: "?",
                 feedItemId = feedItem.uuid,
                 seqNo = -1

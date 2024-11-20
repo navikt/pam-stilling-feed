@@ -7,7 +7,6 @@ import no.nav.pam.stilling.feed.dto.Feed
 import no.nav.pam.stilling.feed.dto.FeedAd
 import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.util.*
@@ -151,5 +150,23 @@ class FeedServiceTest {
 
         val feedPage = feedService.hentFeedHvis(feedService.hentFørsteSide()!!.id, antall = antallEksisterendeFeedItems + Feed.defaultPageSize)!!
         assertEquals(2, feedPage.items.size - antallEksisterendeFeedItems)
+    }
+
+    @Test
+    fun `Feed viser riktig info om stillinger`() {
+        val ad = objectMapper.readValue(javaClass.getResourceAsStream("/ad_dto.json"), AdDTO::class.java).copy(uuid = UUID.randomUUID().toString())
+        feedService.lagreNyStillingsAnnonse(ad)
+
+        val feed = feedService.hentFeedHvis(feedService.hentSisteSide()!!.id, antall = 100)!!
+        val relevantFeedItem = feed.items.find { it.id == ad.uuid }
+        assertNotNull(relevantFeedItem)
+        assertEquals(ad.uuid, relevantFeedItem.id)
+        assertEquals("Vi søker pedagogisk leder til", relevantFeedItem.title)
+        assertEquals("/api/v1/feedentry/${ad.uuid}", relevantFeedItem.url)
+
+        assertEquals(ad.uuid, relevantFeedItem.feed_entry.uuid)
+        assertEquals("ACTIVE", relevantFeedItem.feed_entry.status)
+        assertEquals("Vi søker pedagogisk leder til", relevantFeedItem.feed_entry.title)
+        assertEquals("LEKA", relevantFeedItem.feed_entry.municipal)
     }
 }
