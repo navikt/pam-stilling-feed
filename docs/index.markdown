@@ -206,7 +206,7 @@ while (true) {
    Accept: application/json
    Authorization: Bearer <your secret key>
    If-Modified-Since: $lastModified
-   If-None-Match: $etag (only provide this if etag is not null, i.e. don't provide etag in first call)   
+   If-None-Match: $etag (not mandatory: only provide this if etag is not null, i.e. don't provide etag in first call)   
    
    if (response.status == 200) {
      lastModifed = response.header.last-modified
