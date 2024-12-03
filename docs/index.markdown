@@ -187,6 +187,54 @@ Feed entry
 }
 ```
 
+## Migrating from the old public-feed
+If you are migrating from the old public-feed, you will find that you must implement more filtering on your side.
+On the other hand: this feed will make it easier for you to comply with our terms.
+
+This is an example in pseudo-code of how to download all active ads in the Bergen municipality.
+Note that an ad can never be active for more than 6 months, so it's no point in downloading older ads. Assuming that
+today is 2024-12-01, it's no point in downloading ads before 2024-06-01.
+Note also that the time format uses RFC-1193 format.
+
+```
+lastModified = Sat, 1 Jun 2024 00:00:00 +0200
+etag = null
+feedPage = "/api/v1/feed"
+
+while (true) {
+   response = GET https://pam-stilling-feed.nav.no/$feedPage
+   Accept: application/json
+   Authorization: Bearer <your secret key>
+   If-Modified-Since: $lastModified
+   If-None-Match: $etag (not mandatory: only provide this if etag is not null, i.e. don't provide etag in first call)   
+   
+   if (response.status == 200) {
+     lastModifed = response.header.last-modified
+     etag = response.header.etag
+     feedPage = response.next_url
+     
+     foreach (adHeader in response.bodyAsJson.items) {
+       if (adHeader._feed_entry.status != "ACTIVE")
+           # Delete inactive ads even if their municipality is wrong
+           # Municipality, and other fields that you filter on, might change
+           DELETE_AD(adHeader._feed_entry.id)
+       } else {
+           if (adHeader._feed_entry.municipal == "BERGEN") {
+               adResponse = GET https://pam-stilling-feed.nav.no/${adHeader.url}
+               Accept: application/json
+               Authorization: Bearer <your secret key>
+   
+               if (adResponse.status == 200)
+                   SAVE_AD(adResponse.bodyAsJson.ad_content)                
+       }        
+   } else {
+     # We have either downloaded all ads, or an error occured
+     # In any case, sleep for 2 minutes before trying to fetch ad updates     
+     sleep(120 seconds)
+   }
+}     
+```
+
 ## Contact & Questions
 
 If you have questions or suggestions feel free to report it as
