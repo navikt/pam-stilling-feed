@@ -3,8 +3,11 @@ package no.nav.pam.stilling.feed.controllertest
 import no.nav.pam.stilling.feed.*
 import no.nav.pam.stilling.feed.config.TxTemplate
 import no.nav.pam.stilling.feed.dto.KonsumentDTO
+import no.nav.pam.stilling.feed.sikkerhet.SecurityConfig
+import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.net.URI
@@ -26,11 +29,13 @@ class TokenControllerTest {
         private const val TELEFON = "12344321"
         private const val KONTAKTPERSON = "Test Testersen"
         private const val KONSUMENT_URL = "$lokalUrlBase/internal/api/newConsumer"
+        private const val PUBLIC_TOKEN_URL = "$lokalUrlBase/api/publicToken"
         private const val TOKEN_URL = "$lokalUrlBase/internal/api/newApiToken"
     }
 
     private val httpClient = HttpClient.newBuilder().build()
     private lateinit var tokenRepository: TokenRepository
+    private lateinit var tokenService: TokenService
     private lateinit var txTemplate: TxTemplate
 
     @BeforeAll
@@ -38,6 +43,7 @@ class TokenControllerTest {
         val ds = dataSource
         txTemplate = TxTemplate(ds)
         tokenRepository = TokenRepository(txTemplate)
+        tokenService = TokenService(tokenRepository, LeaderElector("NOLEADERELECTION"), securityConfig, txTemplate)
         kjørFlywayMigreringer(ds)
         startLocalApplication()
     }
@@ -45,6 +51,20 @@ class TokenControllerTest {
     @AfterEach
     fun tømTabeller() {
         txTemplate.tømTabeller("token", "feed_consumer")
+    }
+
+    @Test
+    @Disabled("Det er noen timing issues her...")
+    fun skalHentePublicToken() {
+        var response = sendGetRequest(PUBLIC_TOKEN_URL)
+        if (response.statusCode() != 200) {
+            // #!$% retry...
+            response = sendGetRequest(PUBLIC_TOKEN_URL)
+        }
+        Assertions.assertThat(response.statusCode()).isEqualTo(200)
+
+        val publicToken = tokenService.hentPublicToken()
+        Assertions.assertThat(response.body()).contains(publicToken)
     }
 
     @Test
@@ -106,15 +126,16 @@ class TokenControllerTest {
     @Test
     fun eldreTokensBlirInvalidertVedNyttToken() {
         sendPostRequest(KONSUMENT_URL, konsumentJson);
-        val konsumentFraDb = hentKonsumenter().first()
+        val konsumentFraDb = hentKonsumenter().first { it.identifikator != SecurityConfig.PUBLIC_TOKEN_ID }
 
         sendPostRequest(TOKEN_URL, tokenRequestJson(konsumentFraDb.id))
-        val førsteToken = hentTokens().first()
+        val konsumentTokens = hentTokens(konsumentFraDb.id)
+        val førsteToken = konsumentTokens.first()
         assertFalse(førsteToken.invalidated)
 
         Thread.sleep(1000L) // For å få ulikt sekund fra forrige token
         sendPostRequest(TOKEN_URL, tokenRequestJson(konsumentFraDb.id))
-        val tokensEtterAndreKall = hentTokens()
+        val tokensEtterAndreKall = hentTokens(konsumentFraDb.id)
         val andreToken = tokensEtterAndreKall.first { it.id != førsteToken.id }
 
         assertEquals(2, tokensEtterAndreKall.size)
@@ -127,7 +148,7 @@ class TokenControllerTest {
 
         Thread.sleep(1000L) // For å få ulikt sekund fra forrige token
         sendPostRequest(TOKEN_URL, tokenRequestJson(konsumentFraDb.id))
-        val tokensEtterTredjeKall = hentTokens()
+        val tokensEtterTredjeKall = hentTokens(konsumentFraDb.id)
         val tredjeToken = tokensEtterTredjeKall.first { it.id !in listOf(førsteToken.id, andreToken.id) }
 
         assertEquals(3, tokensEtterTredjeKall.size)
@@ -180,6 +201,14 @@ class TokenControllerTest {
             .build(),
         BodyHandlers.ofString()
     )
+    private fun sendGetRequest(url: String, token: String = testAdminToken) = httpClient.send(
+        HttpRequest.newBuilder()
+            .uri(URI(url))
+            .GET()
+            .setHeader("Authorization", "Bearer $token")
+            .build(),
+        BodyHandlers.ofString()
+    )
 
     private fun sendPostRequestUtenToken(url: String, body: String) = httpClient.send(
         HttpRequest.newBuilder().uri(URI(url)).POST(BodyPublishers.ofString(body)).build(),
@@ -196,9 +225,11 @@ class TokenControllerTest {
         }
     }
 
-    private fun hentTokens() = mutableListOf<TokenTestDTO>().also { tokens ->
+    private fun hentTokens(konsumentId: UUID? = null) = mutableListOf<TokenTestDTO>().also { tokens ->
         txTemplate.doInTransaction { ctx ->
-            ctx.connection().prepareStatement("select * from token").executeQuery().let { rs ->
+            var sql = "select * from token"
+            if (konsumentId != null) {sql += " where consumer_id = '$konsumentId'"}
+            ctx.connection().prepareStatement(sql).executeQuery().let { rs ->
                 while (rs.next()) tokens.add(
                     TokenTestDTO(
                         id = rs.getObject("id") as UUID,

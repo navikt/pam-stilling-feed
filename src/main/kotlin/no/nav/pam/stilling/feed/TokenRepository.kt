@@ -2,6 +2,7 @@ package no.nav.pam.stilling.feed
 
 import no.nav.pam.stilling.feed.config.TxContext
 import no.nav.pam.stilling.feed.config.TxTemplate
+import no.nav.pam.stilling.feed.dto.FeedItem
 import no.nav.pam.stilling.feed.dto.KonsumentDTO
 import java.sql.Timestamp
 import java.time.Instant
@@ -26,6 +27,20 @@ class TokenRepository(private val txTemplate: TxTemplate) {
                 }.executeUpdate()
         }
 
+    fun hentKonsument(identifikator: String, txContext: TxContext? = null) : List<KonsumentDTO> =
+        txTemplate.doInTransaction(txContext) { ctx ->
+            val konsumenter = mutableListOf<KonsumentDTO>()
+            val rs = ctx.connection()
+                .prepareStatement("SELECT * FROM feed_consumer " +
+                        "WHERE identifikator = ? order by opprettet desc")
+                .apply { setObject(1, identifikator) }
+                .executeQuery()
+
+            while (rs.next())
+                konsumenter.add(KonsumentDTO.fraDatabase(rs))
+
+             return@doInTransaction konsumenter
+        } ?: emptyList()
 
     fun hentKonsument(id: UUID, txContext: TxContext? = null) =
         txTemplate.doInTransaction(txContext) { ctx ->
@@ -60,6 +75,15 @@ class TokenRepository(private val txTemplate: TxTemplate) {
 
     fun hentInvaliderteTokens(txContext: TxContext? = null) = txTemplate.doInTransaction(txContext) { ctx ->
         ctx.connection().prepareStatement("SELECT jwt FROM token WHERE invalidated=true").executeQuery().use {
+            generateSequence { if (it.next()) it.getString(1) else null }.toList()
+        }
+    }
+
+    fun hentGyldigeTokens(txContext: TxContext? = null) = txTemplate.doInTransaction(txContext) { ctx ->
+        ctx.connection().prepareStatement("SELECT jwt " +
+                "FROM token " +
+                "WHERE invalidated=false " +
+                "ORDER BY issued_at desc").executeQuery().use {
             generateSequence { if (it.next()) it.getString(1) else null }.toList()
         }
     }
