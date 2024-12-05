@@ -16,6 +16,7 @@ import java.time.Instant
 class SecurityConfig(private val issuer: String, private val audience: String, secret: String) {
     companion object {
         private val LOG = LoggerFactory.getLogger(TokenController::class.java)
+        val PUBLIC_TOKEN_ID = "public-token"
 
         fun getBearerToken(ctx: Context): String? = ctx.header("Authorization")?.let {
             if (it.startsWith("bearer ", true)) it.substring("bearer ".length).trim()

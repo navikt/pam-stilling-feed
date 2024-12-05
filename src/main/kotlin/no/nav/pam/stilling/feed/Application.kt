@@ -55,8 +55,9 @@ fun startApp(
 
     val accessManager = JavalinAccessManager(securityConfig, env)
 
+    val leaderElector = LeaderElector(env["ELECTOR_PATH"]!!)
     val tokenRepository = TokenRepository(txTemplate)
-    val tokenService = TokenService(tokenRepository, txTemplate)
+    val tokenService = TokenService(tokenRepository, leaderElector, securityConfig, txTemplate)
     val tokenController = TokenController(securityConfig, tokenService)
     val healthService = HealthService()
     val kafkaConfig = KafkaConfig(env)
@@ -69,6 +70,7 @@ fun startApp(
     val kafkaListener = KafkaStillingListener(kafkaConsumer, feedService, healthService)
 
     feedService.fjernDIRFraFeed()
+    tokenService.initPublicTokenHvisLeader()
 
     val javalin = startJavalin(
         port = 8080,
@@ -87,6 +89,14 @@ fun startApp(
         0L,
         1000 * 60 * 30 // Refresher denylist en gang hver halvtime
     )
+
+    if (leaderElector.isLeader()) {
+        Timer("PublicTokenRefreshTask").scheduleAtFixedRate(
+            PublicTokenRefreshTask(securityConfig, tokenService),
+            0L,
+            1000 * 60 * 30 // Sjekker om public token skal byttes ut en gang hver halvtime
+        )
+    }
 
     if (env.variable("REKJOR_DETALJER_ENABLED").toBooleanStrict()) {
         val rekjørDetaljerKafkaConsumer = kafkaConfig.kafkaConsumer(env.variable("STILLING_INTERN_TOPIC"), env.variable("REKJOR_DETALJER_GROUP_ID"))

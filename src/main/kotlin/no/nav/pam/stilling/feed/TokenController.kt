@@ -19,9 +19,24 @@ class TokenController(private val securityConfig: SecurityConfig, private val to
     }
 
     fun setupRoutes(javalin: Javalin) {
+        javalin.get("/api/publicToken", { ctx -> publicToken(ctx) }, Rolle.UNPROTECTED)
         javalin.get("/internal/api/tokenInfo", { ctx -> tokenInfo(ctx) }, Rolle.ADMIN)
         javalin.post("/internal/api/newApiToken", { ctx -> nyttApiToken(ctx) }, Rolle.ADMIN)
         javalin.post("/internal/api/newConsumer", { ctx -> nyKonsument(ctx) }, Rolle.ADMIN)
+    }
+
+    private fun publicToken(ctx: Context) {
+        val publicToken = tokenService.hentPublicToken()
+        if (publicToken == null) {
+            ctx.status(404).result("Public token is not currently available")
+        } else {
+            ctx.status(200)
+            ctx.contentType("text/plain")
+            ctx.result("""
+                Current public token for Nav Job Vacancy Feed:
+                $publicToken
+            """.trimIndent())
+        }
     }
 
     private fun nyKonsument(ctx: Context) = try {
