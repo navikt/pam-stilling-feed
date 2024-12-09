@@ -29,7 +29,7 @@ class TokenService(private val tokenRepository: TokenRepository,
             } else {
                 return@doInTransaction eksisterende.first()
             }
-        } ?: konsument
+        } ?: throw IllegalArgumentException("Greide hverken å hente eller opprette konsument ${konsument.id}")
 
     fun finnKonsument(konsumentId: UUID) = tokenRepository.hentKonsument(konsumentId)
 
