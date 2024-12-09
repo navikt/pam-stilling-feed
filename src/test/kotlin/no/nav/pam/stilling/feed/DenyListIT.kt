@@ -5,6 +5,7 @@ import no.nav.pam.stilling.feed.*
 import no.nav.pam.stilling.feed.config.TxTemplate
 import no.nav.pam.stilling.feed.dto.AdDTO
 import no.nav.pam.stilling.feed.dto.KonsumentDTO
+import no.nav.pam.stilling.feed.sikkerhet.SecurityConfig
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -32,7 +33,7 @@ class DenyListIT {
         val ds = dataSource
         txTemplate = TxTemplate(ds)
         tokenRepository = TokenRepository(txTemplate)
-        tokenService = TokenService(tokenRepository, txTemplate)
+        tokenService = TokenService(tokenRepository, LeaderElector("NOLEADERELECTION"), securityConfig, txTemplate)
         feedService = FeedService(FeedRepository(txTemplate), txTemplate, objectMapper)
         kjørFlywayMigreringer(ds)
         startLocalApplication()
