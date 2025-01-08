@@ -79,14 +79,14 @@ class TokenRepository(private val txTemplate: TxTemplate) {
         }
     }
 
-    fun hentGyldigeTokens(consumerId: String? = null, txContext: TxContext? = null) = txTemplate.doInTransaction(txContext) { ctx ->
-        val consumerClause = consumerId?.let { "and consumer_id = ? " } ?: ""
+    fun hentGyldigeTokens(konsumentId: UUID? = null, txContext: TxContext? = null) = txTemplate.doInTransaction(txContext) { ctx ->
+        val consumerClause = konsumentId?.let { "and consumer_id = ? " } ?: ""
         ctx.connection().prepareStatement("SELECT jwt " +
                 "FROM token " +
                 "WHERE invalidated=false " +
                 consumerClause +
                 "ORDER BY issued_at desc")
-            .apply { if (consumerId != null) setString(1, consumerId) }
+            .apply { if (konsumentId != null) setObject(1, konsumentId) }
             .executeQuery().use {
             generateSequence { if (it.next()) it.getString(1) else null }.toList()
         }
