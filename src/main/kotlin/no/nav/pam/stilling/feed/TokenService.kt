@@ -42,7 +42,7 @@ class TokenService(private val tokenRepository: TokenRepository,
     fun hentPublicToken(txContext: TxContext? = null) =
         txTemplate.doInTransaction(txContext) { ctx ->
             tokenRepository.hentKonsument(SecurityConfig.PUBLIC_TOKEN_ID, ctx).firstOrNull()?.let { k ->
-                tokenRepository.hentGyldigeTokens(ctx)?.firstOrNull()
+                tokenRepository.hentGyldigeTokens(k.id, ctx)?.firstOrNull()
             }
         }
 
