@@ -197,7 +197,7 @@ On the other hand: this feed will make it easier for you to comply with our term
 This is an example in pseudo-code of how to download all active ads in the Bergen municipality.
 Note that an ad can never be active for more than 6 months, so it's no point in downloading older ads. Assuming that
 today is 2024-12-01, it's no point in downloading ads before 2024-06-01.
-Note also that the time format uses RFC-1193 format.
+Note also that the time format uses RFC-1123 format.
 
 ```
 lastModified = Sat, 1 Jun 2024 00:00:00 +0200
