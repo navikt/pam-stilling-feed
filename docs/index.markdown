@@ -13,8 +13,8 @@ This API provides a feed with all the job vacancies we have the opportunity to s
 The job vacancies are either directly registered at NAV or obtained through third parties/ATS systems. 
 (vacancies from Finn.no are not included in the API)
 
-Each change to an ad will generate a new entry in the feed, but when querying for the details of a vacancy you will only
-receive the newest data.
+Each change to an ad will generate a new entry in the feed, and the latest entry will contain the current state of the ad.
+When querying for the details of a vacancy you will receive the newest data.
 
 > Note: If an ad is actively stopped (i.e. not simply inactive because of expiry), it will be updated by masking or
 > removing certain fields including title, employer, business and contact information.
@@ -57,6 +57,17 @@ GET https://pam-stilling-feed.nav.no/api/v1/feed
 Accept: application/json
 Authorization: Bearer <your secret key>
 ```
+
+## Frequently asked questions (FAQ)
+
+1. Why do I see ads listed as inactive in the feed?
+   - The feed contains all ads and their state registered at NAV since ca. 2019, ads that are fulfilled or expired are
+     marked as inactive.
+2. I want to see all active ads in the feed, how do I do that?
+   - The API does not only show active ads, it is a continuous feed of all ads. If you want to filter on active ads,
+     you will need to implement this on your side, once an ad is marked as inactive you will need to remove it from your service as stated in the [terms of use](https://arbeidsplassen.nav.no/vilkar-api).
+3. Can I filter on ads containing a specific employer/company/municipality/keyword?
+   - If you want to filter on specific criteria, you will need to implement this on your side. If you want to fetch ads after a given date, you can use the `If-Modified-Since` header.
 
 ## Using the feed
 
