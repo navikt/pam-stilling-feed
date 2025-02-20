@@ -16,7 +16,7 @@ class DatabaseConfig(env: Map<String, String>,
     fun lagDatasource() = HikariConfig().apply {
         jdbcUrl = "jdbc:postgresql://$host:$port/$database"
         minimumIdle = 1
-        maximumPoolSize = 2
+        maximumPoolSize = 5
         driverClassName = "org.postgresql.Driver"
         initializationFailTimeout = 5000
         username = user
