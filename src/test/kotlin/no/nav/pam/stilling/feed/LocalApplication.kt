@@ -2,6 +2,7 @@ package no.nav.pam.stilling.feed
 
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
+import io.micrometer.core.instrument.binder.logging.LogbackMetrics
 import io.micrometer.prometheus.PrometheusConfig
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import no.nav.pam.stilling.feed.config.TxTemplate
@@ -61,7 +62,9 @@ val securityConfig = SecurityConfig(issuer = "nav-test", audience = "feed-api-v2
 val testToken = securityConfig.newTokenFor(KonsumentDTO(UUID.randomUUID(), "test", "test", "test", "test"))
 val testAdminToken = securityConfig.newTokenFor(KonsumentDTO(UUID.randomUUID(), "test", "admin@arbeidsplassen.nav.no", "test", "test"))
 
-val prometheusRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
+val prometheusRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT).also { registry ->
+    LogbackMetrics().bindTo(registry)
+}
 
 private var harStartetApplikasjonen = false
 private var listenerThread: Thread? = null

@@ -11,6 +11,7 @@ import io.javalin.json.JavalinJackson
 import io.javalin.micrometer.MicrometerPlugin
 import io.javalin.openapi.plugin.redoc.ReDocPlugin
 import io.javalin.openapi.plugin.swagger.SwaggerPlugin
+import io.micrometer.core.instrument.binder.logging.LogbackMetrics
 import io.micrometer.prometheus.PrometheusConfig
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import net.logstash.logback.argument.StructuredArguments.kv
@@ -30,7 +31,9 @@ import javax.sql.DataSource
 
 fun main() {
     val env = System.getenv()
-    val prometheusRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
+    val prometheusRegistry = PrometheusMeterRegistry(PrometheusConfig.DEFAULT).also { registry ->
+        LogbackMetrics().bindTo(registry)
+    }
     val dataSource = DatabaseConfig(env, prometheusRegistry.prometheusRegistry).lagDatasource()
     val securityConfig = SecurityConfig(issuer = "nav-no", audience = "feed-api-v2", secret = env.variable("PRIVATE_SECRET"))
 
