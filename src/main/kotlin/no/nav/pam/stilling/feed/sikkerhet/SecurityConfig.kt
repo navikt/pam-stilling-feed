@@ -62,7 +62,7 @@ class SecurityConfig(private val issuer: String, private val audience: String, s
             false
         } else true
     } catch (e: Exception) {
-        LOG.error("Feil ved validering av token - Konsument: ${decodedJWT.getKid()} - Error: $e")
+        LOG.warn("Feil ved validering av token - Konsument: ${decodedJWT.getKid()} - Error: $e")
         false
     }
 
