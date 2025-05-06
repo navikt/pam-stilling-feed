@@ -92,6 +92,7 @@ fun startApp(
         0L,
         1000 * 60 * 30 // Refresher denylist en gang hver halvtime
     )
+    println("Leader: ${leaderElector.isLeader()}")
 
     if (leaderElector.isLeader()) {
         Timer("PublicTokenRefreshTask").scheduleAtFixedRate(
