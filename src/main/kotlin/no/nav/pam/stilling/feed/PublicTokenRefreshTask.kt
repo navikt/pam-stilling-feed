@@ -16,6 +16,7 @@ class PublicTokenRefreshTask(
     }
 
     override fun run() {
+        LOG.info("Starter jobb for å sjekke om public token utgår snart")
         val publicToken = tokenService.hentPublicToken()
         val publicJwt = securityConfig.parseJWT(publicToken!!)
         if (publicJwt.decodedJWT!!.expiresAtAsInstant
