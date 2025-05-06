@@ -93,13 +93,11 @@ fun startApp(
         1000 * 60 * 30 // Refresher denylist en gang hver halvtime
     )
 
-    if (leaderElector.isLeader()) {
-        Timer("PublicTokenRefreshTask").scheduleAtFixedRate(
-            PublicTokenRefreshTask(securityConfig, tokenService),
-            0L,
-            1000 * 60 * 30 // Sjekker om public token skal byttes ut en gang hver halvtime
-        )
-    }
+    Timer("PublicTokenRefreshTask").scheduleAtFixedRate(
+        PublicTokenRefreshTask(securityConfig, tokenService, leaderElector),
+        0L,
+        1000 * 60 * 30 // Sjekker om public token skal byttes ut en gang hver halvtime
+    )
 
     if (env.variable("REKJOR_DETALJER_ENABLED").toBooleanStrict()) {
         val rekjørDetaljerKafkaConsumer = kafkaConfig.kafkaConsumer(env.variable("STILLING_INTERN_TOPIC"), env.variable("REKJOR_DETALJER_GROUP_ID"))

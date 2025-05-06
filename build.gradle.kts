@@ -1,9 +1,9 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
-    kotlin("jvm") version "1.9.21"
-    kotlin("kapt") version "1.9.21"
-    id("com.gradleup.shadow") version "8.3.2"
+    kotlin("jvm") version "2.1.10"
+    kotlin("kapt") version "2.1.10"
+    id("com.gradleup.shadow") version "8.3.6"
     application
 }
 
