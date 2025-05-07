@@ -33,6 +33,8 @@ class TokenService(private val tokenRepository: TokenRepository,
 
     fun finnKonsument(konsumentId: UUID) = tokenRepository.hentKonsument(konsumentId)
 
+    fun hentKonsumenter(spørring: String) = tokenRepository.hentKonsumenter(spørring) ?: emptyList()
+
     fun lagreNyttTokenForKonsument(konsumentId: UUID, jwt: String, issuedAt: Instant, txContext: TxContext? = null) =
         txTemplate.doInTransaction(txContext) { ctx ->
             tokenRepository.invaliderTokensForKonsument(konsumentId, ctx)

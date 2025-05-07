@@ -2,7 +2,6 @@ package no.nav.pam.stilling.feed
 
 import no.nav.pam.stilling.feed.config.TxContext
 import no.nav.pam.stilling.feed.config.TxTemplate
-import no.nav.pam.stilling.feed.dto.FeedItem
 import no.nav.pam.stilling.feed.dto.KonsumentDTO
 import java.sql.Timestamp
 import java.time.Instant
@@ -49,6 +48,22 @@ class TokenRepository(private val txTemplate: TxTemplate) {
                 .apply { setObject(1, id) }
                 .executeQuery()
                 .takeIf { it.next() }?.let { KonsumentDTO.fraDatabase(it) }
+        }
+
+    fun hentKonsumenter(spørring: String, txContext: TxContext? = null): List<KonsumentDTO>? =
+        txTemplate.doInTransaction(txContext) { ctx ->
+            val konsumenter = mutableListOf<KonsumentDTO>()
+            val rs = ctx.connection()
+                .prepareStatement("SELECT * FROM feed_consumer "
+                + "WHERE lower(cast(id as text) || identifikator || email || telefon || kontaktperson) LIKE ? "
+                + "ORDER BY opprettet desc")
+                .apply { setString(1, "%${spørring.lowercase()}%") }
+                .executeQuery()
+
+            while (rs.next())
+                konsumenter.add(KonsumentDTO.fraDatabase(rs))
+
+            return@doInTransaction konsumenter
         }
 
     fun invaliderTokensForKonsument(konsumentId: UUID, txContext: TxContext? = null) =

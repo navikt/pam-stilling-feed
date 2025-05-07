@@ -1,5 +1,6 @@
 package no.nav.pam.stilling.feed.controllertest
 
+import com.fasterxml.jackson.module.kotlin.readValue
 import no.nav.pam.stilling.feed.*
 import no.nav.pam.stilling.feed.config.TxTemplate
 import no.nav.pam.stilling.feed.dto.KonsumentDTO
@@ -31,6 +32,7 @@ class TokenControllerTest {
         private const val KONSUMENT_URL = "$lokalUrlBase/internal/api/newConsumer"
         private const val PUBLIC_TOKEN_URL = "$lokalUrlBase/api/publicToken"
         private const val TOKEN_URL = "$lokalUrlBase/internal/api/newApiToken"
+        private const val HENT_KONSUMENTER_URL = "$lokalUrlBase/internal/api/consumers"
     }
 
     private val httpClient = HttpClient.newBuilder().build()
@@ -179,6 +181,34 @@ class TokenControllerTest {
 
         response = sendPostRequestUtenToken(TOKEN_URL, tokenRequestJson(UUID.randomUUID()))
         assertEquals(401, response.statusCode())
+    }
+
+    @Test
+    fun `Skal kunne hente konsumenter med riktig token`() {
+        repeat(10) { sendPostRequest(KONSUMENT_URL, konsumentJson) }
+
+        val alleKonsumenter = hentKonsumenter()
+        val response = sendGetRequest("$HENT_KONSUMENTER_URL?q=")
+        val hentedeKonsumenter: List<KonsumentDTO> = objectMapper.readValue(response.body())
+
+        assertEquals(200, response.statusCode())
+        assertTrue(hentedeKonsumenter.isNotEmpty())
+        assertEquals(10, hentedeKonsumenter.size)
+        assertTrue(hentedeKonsumenter.containsAll(alleKonsumenter))
+    }
+
+    @Test
+    fun `Skal ikke kunne hente konsumenter uten admin token`() {
+        val response = sendGetRequest(HENT_KONSUMENTER_URL, testToken)
+
+        assertEquals(401, response.statusCode())
+    }
+
+    @Test
+    fun `Skal returnere Bad Request ved søk uten en spørring`() {
+        val response = sendGetRequest(HENT_KONSUMENTER_URL)
+        assertEquals(400, response.statusCode())
+        assertEquals("Missing query parameter 'q'", response.body())
     }
 
     val konsumentJson = """{
