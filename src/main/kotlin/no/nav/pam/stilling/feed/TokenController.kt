@@ -23,6 +23,7 @@ class TokenController(private val securityConfig: SecurityConfig, private val to
         javalin.get("/internal/api/tokenInfo", { ctx -> tokenInfo(ctx) }, Rolle.ADMIN)
         javalin.post("/internal/api/newApiToken", { ctx -> nyttApiToken(ctx) }, Rolle.ADMIN)
         javalin.post("/internal/api/newConsumer", { ctx -> nyKonsument(ctx) }, Rolle.ADMIN)
+        javalin.get("/internal/api/consumers", { ctx -> hentKonsumenter(ctx) }, Rolle.ADMIN)
     }
 
     private fun publicToken(ctx: Context) {
@@ -121,5 +122,20 @@ class TokenController(private val securityConfig: SecurityConfig, private val to
             ctx.status(501)
             ctx.result("Missing Authorization header")
         }
+    }
+
+    private fun hentKonsumenter(ctx: Context) = try {
+        val spørring = ctx.queryParam("q")
+        if (spørring !== null) {
+            val konsumenter = tokenService.hentKonsumenter(spørring)
+            ctx.json(konsumenter)
+        } else {
+            ctx.status(400)
+            ctx.result("Missing query parameter 'q'")
+        }
+    } catch (e: Exception) {
+        LOG.error("Error when fetching consumers", e)
+        ctx.status(400)
+        ctx.result("Bad input data")
     }
 }
