@@ -53,6 +53,10 @@ spec:
         cascadingDelete: false
   kafka:
     pool: {{kafka_pool}}
+  accessPolicy:
+    inbound:
+      rules:
+        - application: pam-stilling-feed-admin
   envFrom:
     - secret: pam-stilling-feed-secret
   env:
