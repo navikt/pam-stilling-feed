@@ -1,5 +1,6 @@
 package no.nav.pam.stilling.feed.controllertest
 
+import io.javalin.http.HttpStatus
 import no.nav.pam.stilling.feed.*
 import no.nav.pam.stilling.feed.config.TxTemplate
 import no.nav.pam.stilling.feed.dto.AdDTO
@@ -130,6 +131,48 @@ class FeedControllerTest {
                 page.items.first().date_modified?.toLocalDateTime())
 
         txTemplate.tømTabeller("feed_page_item")
+    }
+
+    @Test
+    fun `Skal returnere feilkode hvis pageSize settes til å være for stor, ved henting av selve feed-en`() {
+        val ad = objectMapper.readValue(javaClass.getResourceAsStream("/ad_dto.json"), AdDTO::class.java)
+        feedService.lagreNyStillingsAnnonse(ad)
+
+        val urlMedDefaultPageSize = "$lokalUrlBase/api/v1/feed?last=true"
+        var response = sendFeedRequest(urlMedDefaultPageSize)
+        assertEquals(HttpStatus.OK.code, response.statusCode())
+
+        val urlMedMaxPageSize = "$urlMedDefaultPageSize&pageSize=${FeedController.MAX_PAGE_SIZE}"
+        response = sendFeedRequest(urlMedMaxPageSize)
+        assertEquals(HttpStatus.OK.code, response.statusCode())
+
+        val urlMedForStorPageSize = "$urlMedDefaultPageSize&pageSize=${FeedController.MAX_PAGE_SIZE + 1}"
+        response = sendFeedRequest(urlMedForStorPageSize)
+        assertEquals(HttpStatus.BAD_REQUEST.code, response.statusCode())
+        assertEquals("pageSize must be less than or equal to 10000", response.body())
+    }
+
+    @Test
+    fun `Skal returnere feilkode hvis pageSize settes til å være for stor, ved henting av en side i feed-en`() {
+        val ad = objectMapper.readValue(javaClass.getResourceAsStream("/ad_dto.json"), AdDTO::class.java)
+        feedService.lagreNyStillingsAnnonse(ad)
+
+        val lastFeedPage = sendFeedRequest("$lokalUrlBase/api/v1/feed?last=true")
+        val feedPageAsJson = objectMapper.readTree(lastFeedPage.body())
+        val pageId = feedPageAsJson["id"].asText()
+
+        val urlMedDefaultPageSize = "$lokalUrlBase/api/v1/feed/$pageId"
+        var response = sendFeedRequest(urlMedDefaultPageSize)
+        assertEquals(HttpStatus.OK.code, response.statusCode())
+
+        val urlMedMaxPageSize = "$urlMedDefaultPageSize?pageSize=${FeedController.MAX_PAGE_SIZE}"
+        response = sendFeedRequest(urlMedMaxPageSize)
+        assertEquals(HttpStatus.OK.code, response.statusCode())
+
+        val urlMedForStorPageSize = "$urlMedDefaultPageSize?pageSize=${FeedController.MAX_PAGE_SIZE + 1}"
+        response = sendFeedRequest(urlMedForStorPageSize)
+        assertEquals(HttpStatus.BAD_REQUEST.code, response.statusCode())
+        assertEquals("pageSize must be less than or equal to 10000", response.body())
     }
 
     private fun getFeedPage(pageId: String = "", etag: String? = null, lastModified: String? = null) : Pair<Feed, HttpHeaders> {

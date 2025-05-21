@@ -3,6 +3,7 @@ package no.nav.pam.stilling.feed
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.javalin.Javalin
 import io.javalin.http.Context
+import io.javalin.http.HttpStatus
 import io.javalin.openapi.*
 import no.nav.pam.stilling.feed.dto.Feed
 import no.nav.pam.stilling.feed.dto.FeedEntryContent
@@ -17,6 +18,7 @@ class FeedController(private val feedService: FeedService, private val objectMap
     companion object {
         private val LOG = LoggerFactory.getLogger(FeedRepository::class.java)
         const val defaultOutboundPageSize: Int = 1000
+        const val MAX_PAGE_SIZE = 10000
     }
 
     private fun hentKonsumentId() = MDC.get(KONSUMENT_ID_MDC_KEY)
@@ -24,12 +26,12 @@ class FeedController(private val feedService: FeedService, private val objectMap
     fun setupRoutes(javalin: Javalin) {
         javalin.get(
             "/api/v1/feed/{feed_page_id}",
-            { ctx -> hentFeed(ctx, ctx.pathParam("feed_page_id"), toInt(ctx.queryParam("pageSize"), defaultOutboundPageSize)) },
+            { ctx -> hentFeed(ctx, ctx.pathParam("feed_page_id")) },
             Rolle.KONSUMENT
         )
         javalin.get(
             "/api/v1/feed",
-            { ctx -> hentFeed(ctx, toInt(ctx.queryParam("pageSize"), defaultOutboundPageSize)) },
+            { ctx -> hentFeed(ctx) },
             Rolle.KONSUMENT
         )
         javalin.get(
@@ -54,10 +56,11 @@ class FeedController(private val feedService: FeedService, private val objectMap
         responses = [
             OpenApiResponse(status = "200", description = "Feed page", content = [OpenApiContent(from = Feed::class)]),
             OpenApiResponse(status = "304", description = "Feed page is empty, or its contents have not changed since last time"),
+            OpenApiResponse(status = "400", description = "Invalid input in the request"),
             OpenApiResponse(status = "404", description = "Could not find page"),
         ]
     )
-    fun hentFeed(ctx: Context, pageSize: Int = defaultOutboundPageSize) {
+    fun hentFeed(ctx: Context) {
         val sisteSide = ctx.queryParam("last")
         val ifModifiedSince = strToZonedDateTime(ctx.header("If-Modified-Since"))
 
@@ -70,7 +73,7 @@ class FeedController(private val feedService: FeedService, private val objectMap
             LOG.warn("Kunne ikke finne feedPageItem - Konsument: ${hentKonsumentId()}")
             ctx.status(404)
         } else
-            hentFeed(ctx, feedPageItem.id.toString(), pageSize)
+            hentFeed(ctx, feedPageItem.id.toString())
     }
 
     private fun toInt(s: String?, defaultValue: Int): Int = s?.toIntOrNull() ?: defaultValue
@@ -90,10 +93,18 @@ class FeedController(private val feedService: FeedService, private val objectMap
         responses = [
             OpenApiResponse(status = "200", description = "The specified feed page", content = [OpenApiContent(from = Feed::class)]),
             OpenApiResponse(status = "304", description = "Feed page is empty, or its contents have not changed since last time"),
+            OpenApiResponse(status = "400", description = "Invalid input in the request"),
             OpenApiResponse(status = "404", description = "Could not find page"),
         ]
     )
-    fun hentFeed(ctx: Context, feedPageId: String, pageSize: Int = defaultOutboundPageSize) {
+    fun hentFeed(ctx: Context, feedPageId: String) {
+        val pageSize = toInt(ctx.queryParam("pageSize"), defaultOutboundPageSize)
+        if (pageSize > MAX_PAGE_SIZE) {
+            ctx.status(HttpStatus.BAD_REQUEST.code)
+            ctx.json("pageSize must be less than or equal to 10000")
+            return
+        }
+
         LOG.info("Henter feed - Konsument: ${hentKonsumentId()} - Side: $feedPageId")
         val etag = ctx.header("If-None-Match")
         val ifModifiedSinceStr = ctx.header("If-Modified-Since")
