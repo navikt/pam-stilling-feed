@@ -104,6 +104,7 @@ class FeedController(private val feedService: FeedService, private val objectMap
             ctx.status(HttpStatus.BAD_REQUEST.code)
             ctx.contentType(ContentType.TEXT_PLAIN)
             ctx.result("pageSize must be less than or equal to 10000")
+            LOG.warn("Mottok ugyldig kall fra ${hentKonsumentId()}, det ble spurt om en for stor pageSize: $pageSize")
             return
         }
 
