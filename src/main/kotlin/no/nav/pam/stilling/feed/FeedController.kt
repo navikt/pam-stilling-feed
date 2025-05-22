@@ -2,6 +2,7 @@ package no.nav.pam.stilling.feed
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.javalin.Javalin
+import io.javalin.http.ContentType
 import io.javalin.http.Context
 import io.javalin.http.HttpStatus
 import io.javalin.openapi.*
@@ -101,7 +102,8 @@ class FeedController(private val feedService: FeedService, private val objectMap
         val pageSize = toInt(ctx.queryParam("pageSize"), defaultOutboundPageSize)
         if (pageSize > MAX_PAGE_SIZE) {
             ctx.status(HttpStatus.BAD_REQUEST.code)
-            ctx.json("pageSize must be less than or equal to 10000")
+            ctx.contentType(ContentType.TEXT_PLAIN)
+            ctx.result("pageSize must be less than or equal to 10000")
             return
         }
 

@@ -1,5 +1,7 @@
 package no.nav.pam.stilling.feed.controllertest
 
+import io.javalin.http.ContentType
+import io.javalin.http.Header
 import io.javalin.http.HttpStatus
 import no.nav.pam.stilling.feed.*
 import no.nav.pam.stilling.feed.config.TxTemplate
@@ -150,6 +152,8 @@ class FeedControllerTest {
         response = sendFeedRequest(urlMedForStorPageSize)
         assertEquals(HttpStatus.BAD_REQUEST.code, response.statusCode())
         assertEquals("pageSize must be less than or equal to 10000", response.body())
+        val actualContentType = response.headers().firstValue(Header.CONTENT_TYPE).get()
+        assertTrue(actualContentType.contains(ContentType.TEXT_PLAIN.mimeType))
     }
 
     @Test
@@ -173,6 +177,8 @@ class FeedControllerTest {
         response = sendFeedRequest(urlMedForStorPageSize)
         assertEquals(HttpStatus.BAD_REQUEST.code, response.statusCode())
         assertEquals("pageSize must be less than or equal to 10000", response.body())
+        val actualContentType = response.headers().firstValue(Header.CONTENT_TYPE).get()
+        assertTrue(actualContentType.contains(ContentType.TEXT_PLAIN.mimeType))
     }
 
     private fun getFeedPage(pageId: String = "", etag: String? = null, lastModified: String? = null) : Pair<Feed, HttpHeaders> {
