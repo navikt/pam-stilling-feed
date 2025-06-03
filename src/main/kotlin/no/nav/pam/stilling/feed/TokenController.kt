@@ -47,16 +47,7 @@ class TokenController(private val securityConfig: SecurityConfig, private val to
         if (success != null && success > 0) {
             LOG.info("New consumer created with ID ${konsument.id}")
             ctx.status(200)
-            ctx.contentType("text/plain")
-            ctx.result("""
-                Opprettet ny konsument:
-                ID:             ${konsument.id}
-                Identifikator:  ${konsument.identifikator}
-                Email:          ${konsument.email}
-                Telefon:        ${konsument.telefon}
-                Kontaktperson:  ${konsument.kontaktperson}
-                Opprettet:      ${konsument.opprettet}
-            """.trimIndent())
+            ctx.json(konsument)
         } else {
             LOG.error("Error when creating new consumer")
             ctx.status(500)
