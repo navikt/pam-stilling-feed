@@ -85,8 +85,6 @@ class FeedServiceTest {
         val ad2_public = objectMapper.readValue(javaClass.getResourceAsStream("/ad_dto.json"), AdDTO::class.java)
             .copy(uuid = ad2.uuid, privacy = "SHOW_ALL")
 
-        val antallEksisterendeAnnonser = antallAnnonser()
-
         feedService.lagreNyStillingsAnnonse(ad1)
         feedService.lagreNyStillingsAnnonseFraJson(objectMapper.writeValueAsString(ad2))
 
