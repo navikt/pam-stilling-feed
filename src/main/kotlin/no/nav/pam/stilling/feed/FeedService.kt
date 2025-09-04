@@ -34,7 +34,7 @@ class FeedService(
      */
     private fun adSkalMaskeres(ad: AdDTO) =
         listOf("STOPPED", "DELETED", "REJECTED").contains(ad.status)
-            && ad.privacy != "SHOW_ALL"
+                || ad.privacy != "SHOW_ALL"
 
     fun lagreNyStillingsAnnonse(newAd: AdDTO, txContext: TxContext? = null) : Pair<FeedItem, FeedPageItem>? {
         val ad =
