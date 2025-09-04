@@ -32,7 +32,9 @@ class FeedService(
      * NB: status==REJECTED gjelder også annonser som er merket som duplikater (tilsynelatende KUN duplikater?).
      * Skal disse maskeres, eller gjelder det kun annonser som er DELETED eller STOPPED?
      */
-    private fun adSkalMaskeres(ad: AdDTO) = listOf("STOPPED", "DELETED", "REJECTED").contains(ad.status)
+    private fun adSkalMaskeres(ad: AdDTO) =
+        listOf("STOPPED", "DELETED", "REJECTED").contains(ad.status)
+            && ad.privacy != "SHOW_ALL"
 
     fun lagreNyStillingsAnnonse(newAd: AdDTO, txContext: TxContext? = null) : Pair<FeedItem, FeedPageItem>? {
         val ad =
@@ -46,7 +48,8 @@ class FeedService(
 
         return txTemplate.doInTransaction(txContext) { ctx ->
             val feedAd = mapAd(ad, stillingUrlBase)
-            val active = ad.status == "ACTIVE" && ad.source != "DIR"
+            val active = ad.status == "ACTIVE" && ad.source != "DIR" &&
+                    ad.privacy == "SHOW_ALL"
             val statusDescription = if (active) "ACTIVE" else "INACTIVE"
             val feedJson = if (active) objectMapper.writeValueAsString(feedAd) else ""
 
