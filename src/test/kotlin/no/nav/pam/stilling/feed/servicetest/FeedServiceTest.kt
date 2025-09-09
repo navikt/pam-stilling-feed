@@ -74,6 +74,34 @@ class FeedServiceTest {
     }
 
     @Test
+    fun skalHåndterePrivacy() {
+        val ad1 = objectMapper.readValue(javaClass.getResourceAsStream("/ad_dto.json"), AdDTO::class.java)
+            .copy(uuid = UUID.randomUUID().toString())
+        val ad2 = objectMapper.readValue(javaClass.getResourceAsStream("/ad_dto.json"), AdDTO::class.java)
+            .copy(uuid = UUID.randomUUID().toString(), privacy = "INTERNAL_NOT_SHOWN")
+
+        val ad1_internal = objectMapper.readValue(javaClass.getResourceAsStream("/ad_dto.json"), AdDTO::class.java)
+            .copy(uuid = ad1.uuid, privacy = "INTERNAL_NOT_SHOWN")
+        val ad2_public = objectMapper.readValue(javaClass.getResourceAsStream("/ad_dto.json"), AdDTO::class.java)
+            .copy(uuid = ad2.uuid, privacy = "SHOW_ALL")
+
+        feedService.lagreNyStillingsAnnonse(ad1)
+        feedService.lagreNyStillingsAnnonseFraJson(objectMapper.writeValueAsString(ad2))
+
+        feedService.lagreNyStillingsAnnonse(ad1_internal)
+        feedService.lagreNyStillingsAnnonse(ad2_public)
+
+        // ad 1 var public men er flippet til private, ad2 var private og er flippet til public
+        val lagretAd1 = feedService.hentStillingsAnnonse(UUID.fromString(ad1.uuid))!!
+        Assertions.assertThat(lagretAd1.json).isEmpty()
+
+        val lagretAd2 = feedService.hentStillingsAnnonse(UUID.fromString(ad2_public.uuid))!!
+        Assertions.assertThat(lagretAd2.json).isNotEmpty()
+        val feedSide = feedService.hentSisteSide()!!
+        Assertions.assertThat(feedSide.title).isEqualTo(ad2_public.title)
+    }
+
+    @Test
     fun skalLagreFeedSider() {
         val adIds = mutableListOf<String>()
         for (i in 1..(Feed.defaultPageSize * 3) + 1) {

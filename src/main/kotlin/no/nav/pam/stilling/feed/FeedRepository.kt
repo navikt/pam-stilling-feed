@@ -213,12 +213,13 @@ class FeedRepository(private val txTemplate: TxTemplate) {
 
     fun hentSisteSide(skalIgnorereFinn: Boolean, txContext: TxContext? = null): FeedPageItem? {
         return txTemplate.doInTransaction(txContext) { ctx ->
-            val ignorerFinnClause = if (skalIgnorereFinn) " and kilde != 'FINN'" else ""
+            // TODO ignorer finn
+            val ignorerFinnClause = if (skalIgnorereFinn) " where f2.kilde != 'FINN'" else ""
 
             val sql = """
                 select id, sist_endret, seq_no, status, title, business_name, municipal, feed_item_id
                 from feed_page_item
-                where seq_no in (select max(f2.seq_no) from feed_page_item f2) $ignorerFinnClause
+                where seq_no in (select max(f2.seq_no) from feed_page_item f2 $ignorerFinnClause) 
             """.trimIndent()
             val c = ctx.connection()
             c.prepareStatement(sql).use { statement ->
