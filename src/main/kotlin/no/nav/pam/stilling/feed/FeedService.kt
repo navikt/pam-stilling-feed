@@ -137,8 +137,8 @@ class FeedService(
     }
 
     fun hentStillingsAnnonse(uuid: UUID): FeedItem? {
-        return txTemplate.doInTransaction { ctx ->
-            return@doInTransaction feedRepository.hentFeedItem(uuid, SKAL_IGNORERE_FINN_ANNONSER)
+        return txTemplate.doInTransactionNullable { ctx ->
+            return@doInTransactionNullable feedRepository.hentFeedItem(uuid, SKAL_IGNORERE_FINN_ANNONSER)
         }
     }
 

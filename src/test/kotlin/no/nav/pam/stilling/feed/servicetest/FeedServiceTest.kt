@@ -138,9 +138,10 @@ class FeedServiceTest {
 
             txTemplate.doInTransaction(TxPropagation.REQUIRES_NEW) { ctxNew -> // Implisitt ny kontekst som ikke er del av eksisterende transaksjon
                 feedService.lagreNyStillingsAnnonseFraJson(objectMapper.writeValueAsString(ad2))
-                txTemplate.doInTransaction { ctxNew2 -> // Propagerer kontekst og deltar dermed i eksisterende transaksjon
-                    feedService.lagreNyStillingsAnnonseFraJson(objectMapper.writeValueAsString(ad2))
-                }
+            }
+
+            txTemplate.doInTransaction { ctxNew2 -> // Propagerer kontekst og deltar dermed i eksisterende transaksjon
+                feedService.lagreNyStillingsAnnonseFraJson(objectMapper.writeValueAsString(ad2))
             }
             ctx.setRollbackOnly()
         }
