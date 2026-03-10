@@ -38,12 +38,12 @@ class TokenServiceTest {
     @Test
     fun skalInvalidereOgLageNyttToken() {
         txTemplate.doInTransaction() { ctx ->
-            val eksisterendePublicToken = tokenService.hentPublicToken(ctx)
+            val eksisterendePublicToken = tokenService.hentPublicToken()
             // Må vente i minst 1 sekund for at iat skal bli forskjellig på før og etter tokenet
             Thread.sleep(1001)
-            val nyttPublicToken = tokenService.invaliderOgOpprettNyttPublicToken(ctx)
+            val nyttPublicToken = tokenService.invaliderOgOpprettNyttPublicToken()
             Assertions.assertThat(nyttPublicToken).isNotEqualTo(eksisterendePublicToken)
-            Assertions.assertThat(nyttPublicToken).isEqualTo(tokenService.hentPublicToken(ctx))
+            Assertions.assertThat(nyttPublicToken).isEqualTo(tokenService.hentPublicToken())
         }
     }
 }

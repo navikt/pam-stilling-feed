@@ -21,10 +21,10 @@ class FeedService(
         private val SKAL_IGNORERE_FINN_ANNONSER = true
     }
 
-    fun lagreNyStillingsAnnonseFraJson(jsonAnnonse: String, txContext: TxContext? = null) : Pair<FeedItem, FeedPageItem> {
-        return txTemplate.doInTransaction(txContext) { ctx ->
+    fun lagreNyStillingsAnnonseFraJson(jsonAnnonse: String) : Pair<FeedItem, FeedPageItem> {
+        return txTemplate.doInTransaction { ctx ->
             val ad = objectMapper.readValue(jsonAnnonse, AdDTO::class.java)
-            return@doInTransaction lagreNyStillingsAnnonse(ad, ctx)
+            return@doInTransaction lagreNyStillingsAnnonse(ad)
         }!!
     }
 
@@ -36,7 +36,7 @@ class FeedService(
         listOf("STOPPED", "DELETED", "REJECTED").contains(ad.status)
                 || ad.privacy != "SHOW_ALL"
 
-    fun lagreNyStillingsAnnonse(newAd: AdDTO, txContext: TxContext? = null) : Pair<FeedItem, FeedPageItem>? {
+    fun lagreNyStillingsAnnonse(newAd: AdDTO) : Pair<FeedItem, FeedPageItem>? {
         val ad =
             if (!adSkalMaskeres(newAd)) newAd
             else newAd.copy(title = "...", contactList = mutableListOf(), employer = null, businessName = "")
@@ -46,7 +46,7 @@ class FeedService(
             return null
         }
 
-        return txTemplate.doInTransaction(txContext) { ctx ->
+        return txTemplate.doInTransaction { ctx ->
             val feedAd = mapAd(ad, stillingUrlBase)
             val active = ad.status == "ACTIVE" && ad.source != "DIR" &&
                     ad.privacy == "SHOW_ALL"
@@ -60,7 +60,7 @@ class FeedService(
                 status = statusDescription,
                 kilde = feedAd.source
             )
-            feedRepository.lagreFeedItem(feedItem, ctx)
+            feedRepository.lagreFeedItem(feedItem)
 
             val feedPageItem = FeedPageItem(
                 id = UUID.randomUUID(),
@@ -71,10 +71,10 @@ class FeedService(
                 feedItemId = feedItem.uuid,
                 seqNo = -1
             )
-            val lagretPageItem = feedRepository.lagreFeedPageItem(feedPageItem, feedAd.source, ctx)
+            val lagretPageItem = feedRepository.lagreFeedPageItem(feedPageItem, feedAd.source)
 
             return@doInTransaction Pair(feedItem, lagretPageItem)
-        }!!
+        }
     }
 
     fun fjernDIRFraFeed() {
@@ -82,7 +82,7 @@ class FeedService(
             val items = feedRepository.hentDirekteMeldteFeedItem() ?: mutableListOf()
 
             items.forEach { item ->
-                feedRepository.lagreFeedItem(item.copy(status = "INACTIVE", sistEndret = ZonedDateTime.now(), json = ""), ctx)
+                feedRepository.lagreFeedItem(item.copy(status = "INACTIVE", sistEndret = ZonedDateTime.now(), json = ""))
                 val feedPageItem = FeedPageItem(
                         id = UUID.randomUUID(),
                         status = "INACTIVE",
@@ -92,29 +92,29 @@ class FeedService(
                         feedItemId = item.uuid,
                         seqNo = -1
                 )
-                val lagretPageItem = feedRepository.lagreFeedPageItem(feedPageItem, "DIR", ctx)
+                val lagretPageItem = feedRepository.lagreFeedPageItem(feedPageItem, "DIR")
             }
         }
     }
 
-    fun lagreNyeStillingsAnnonserFraJson(jsonAnnonser: List<String>, txContext: TxContext? = null) : List<Pair<FeedItem, FeedPageItem>> {
-        return txTemplate.doInTransaction(txContext) { ctx ->
+    fun lagreNyeStillingsAnnonserFraJson(jsonAnnonser: List<String>) : List<Pair<FeedItem, FeedPageItem>> {
+        return txTemplate.doInTransaction { ctx ->
             // TODO Hvis vi trenger å optimalisere så er dette en åpenbar kandidat for å batche jdbc-kall
             val ads = jsonAnnonser.mapNotNull { objectMapper.readValue(it, AdDTO::class.java) }
-            return@doInTransaction lagreNyeStillingsAnnonser(ads, ctx)
-        }!!
+            return@doInTransaction lagreNyeStillingsAnnonser(ads)
+        }
     }
 
-    fun lagreOppdaterteDetaljer(annonser: List<AdDTO>, txContext: TxContext? = null) = annonser.map { ad ->
+    fun lagreOppdaterteDetaljer(annonser: List<AdDTO>) = annonser.map { ad ->
         val annonse =
             if (!adSkalMaskeres(ad)) ad
             else ad.copy(title = "...", contactList = mutableListOf(), employer = null, businessName = "")
 
-        return@map txTemplate.doInTransaction(txContext) { ctx ->
+        return@map txTemplate.doInTransaction { ctx ->
             val feedAd = mapAd(annonse, stillingUrlBase)
             val active = annonse.status == "ACTIVE"
             val feedJson = if (active) objectMapper.writeValueAsString(feedAd) else ""
-            feedRepository.oppdaterFeedItemJson(UUID.fromString(annonse.uuid), feedJson, ctx)
+            feedRepository.oppdaterFeedItemJson(UUID.fromString(annonse.uuid), feedJson)
         }
     }.filterNotNull().sum()
 
@@ -122,23 +122,23 @@ class FeedService(
     fun lagreKilde(annonser: List<AdDTO>, txContext: TxContext? = null) = annonser.map { ad ->
         val kilde = ad.source ?: return@map null
 
-        return@map txTemplate.doInTransaction(txContext) { ctx ->
-            feedRepository.oppdaterKildeForFeedItem(UUID.fromString(ad.uuid), kilde, ctx)
+        return@map txTemplate.doInTransaction { ctx ->
+            feedRepository.oppdaterKildeForFeedItem(UUID.fromString(ad.uuid), kilde)
         }
     }.filterNotNull().sum()
 
     fun lagreNyeStillingsAnnonser(ads: List<AdDTO>, txContext: TxContext? = null): List<Pair<FeedItem, FeedPageItem>> {
-        return txTemplate.doInTransaction(txContext) { ctx ->
+        return txTemplate.doInTransaction { ctx ->
             val items = ads.map { ad ->
-                lagreNyStillingsAnnonse(ad, txContext)
+                lagreNyStillingsAnnonse(ad)
             }.filterNotNull().toList()
             return@doInTransaction items
         }!!
     }
 
-    fun hentStillingsAnnonse(uuid: UUID, txContext: TxContext? = null): FeedItem? {
-        return txTemplate.doInTransaction(txContext) { ctx ->
-            return@doInTransaction feedRepository.hentFeedItem(uuid, SKAL_IGNORERE_FINN_ANNONSER, ctx)
+    fun hentStillingsAnnonse(uuid: UUID): FeedItem? {
+        return txTemplate.doInTransaction { ctx ->
+            return@doInTransaction feedRepository.hentFeedItem(uuid, SKAL_IGNORERE_FINN_ANNONSER)
         }
     }
 
@@ -146,10 +146,9 @@ class FeedService(
         id: UUID,
         etag: String? = null,
         sistEndret: ZonedDateTime? = null,
-        antall: Int = Feed.defaultPageSize,
-        txContext: TxContext? = null
+        antall: Int = Feed.defaultPageSize
     ): Feed? {
-        return txTemplate.doInTransaction(txContext) { ctx ->
+        return txTemplate.doInTransactionNullable { ctx ->
             val førsteItem = feedRepository.hentFeedPageItem(id, SKAL_IGNORERE_FINN_ANNONSER)
 
             førsteItem?.let { f ->
@@ -160,7 +159,7 @@ class FeedService(
                 if (etag != null && sistEndret != null &&
                     sisteItemIPage.id.toString() == etag && sisteItemIPage.lastModified.isBefore(sistEndret)) {
                     // Det har ikke vært endringer siden etag og sistEndret
-                    return@doInTransaction Feed.emptyFeed
+                    return@doInTransactionNullable Feed.emptyFeed
                 }
 
                 val feedLines = mutableListOf<FeedLine>()
@@ -169,7 +168,7 @@ class FeedService(
                 items.dropLast(n).forEach { feedLines.add(FeedLine.fraFeedPageItem(it)) }
 
                 val nextId = if (sisteItem.id == sisteItemIPage.id) null else sisteItemIPage.id
-                return@doInTransaction Feed(
+                return@doInTransactionNullable Feed(
                     id = førsteItem.id,
                     etag = sisteItemIPage.id.toString(),
                     lastModified = sisteItemIPage.lastModified,
@@ -179,24 +178,24 @@ class FeedService(
                     items = feedLines
                 )
             }
-            return@doInTransaction null
+            return@doInTransactionNullable null
         }
     }
 
-    fun hentFørsteSide(txContext: TxContext? = null): FeedPageItem? {
-        return txTemplate.doInTransaction(txContext) { ctx ->
-            return@doInTransaction feedRepository.hentFørsteSide(SKAL_IGNORERE_FINN_ANNONSER, ctx)
+    fun hentFørsteSide(): FeedPageItem? {
+        return txTemplate.doInTransactionNullable { ctx ->
+            return@doInTransactionNullable feedRepository.hentFørsteSide(SKAL_IGNORERE_FINN_ANNONSER)
         }
     }
 
-    fun hentSisteSide(txContext: TxContext? = null): FeedPageItem? {
-        return txTemplate.doInTransaction(txContext) { ctx ->
-            return@doInTransaction feedRepository.hentSisteSide(SKAL_IGNORERE_FINN_ANNONSER, ctx)
+    fun hentSisteSide(): FeedPageItem? {
+        return txTemplate.doInTransactionNullable { ctx ->
+            return@doInTransactionNullable feedRepository.hentSisteSide(SKAL_IGNORERE_FINN_ANNONSER)
         }
     }
 
-    fun hentFørsteSideNyereEnn(cutoff: ZonedDateTime, txContext: TxContext? = null) =
-        txTemplate.doInTransaction(txContext) { ctx ->
-            feedRepository.hentFørsteSideNyereEnn(cutoff, SKAL_IGNORERE_FINN_ANNONSER, ctx)
+    fun hentFørsteSideNyereEnn(cutoff: ZonedDateTime) =
+        txTemplate.doInTransactionNullable { ctx ->
+            feedRepository.hentFørsteSideNyereEnn(cutoff, SKAL_IGNORERE_FINN_ANNONSER)
         }
 }
