@@ -4,5 +4,7 @@
   "stilling_url_base": "https://arbeidsplassen.nav.no/stillinger/stilling",
   "tilgangsstyring_enabled": "true",
   "rekjor_detaljer_enabled": "false",
-  "rekjor_detaljer_group_id": "pam-stilling-feed-rekjor-2"
+  "rekjor_detaljer_group_id": "pam-stilling-feed-rekjor-2",
+  "min_replicas": "2",
+  "max_replicas": "4"
 }
