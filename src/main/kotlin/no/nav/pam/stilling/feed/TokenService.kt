@@ -1,6 +1,5 @@
 package no.nav.pam.stilling.feed
 
-import no.nav.pam.stilling.feed.config.TxContext
 import no.nav.pam.stilling.feed.config.TxTemplate
 import no.nav.pam.stilling.feed.dto.KonsumentDTO
 import no.nav.pam.stilling.feed.sikkerhet.SecurityConfig
@@ -20,11 +19,11 @@ class TokenService(private val tokenRepository: TokenRepository,
      * Hvis konsument med samme identifikator finnes fra før, så returneres den.
      * Hvis ikke så opprettes konsumenten.
      */
-    fun hentEllerOpprettKonsument(konsument: KonsumentDTO, txContext: TxContext? = null): KonsumentDTO =
-        txTemplate.doInTransaction(txContext) { ctx ->
-            val eksisterende = tokenRepository.hentKonsument(konsument.identifikator, ctx)
+    fun hentEllerOpprettKonsument(konsument: KonsumentDTO): KonsumentDTO =
+        txTemplate.doInTransaction { ctx ->
+            val eksisterende = tokenRepository.hentKonsument(konsument.identifikator)
             if (eksisterende.isEmpty()) {
-                tokenRepository.opprettKonsument(konsument, ctx)
+                tokenRepository.opprettKonsument(konsument)
                 return@doInTransaction konsument
             } else {
                 return@doInTransaction eksisterende.first()
@@ -35,16 +34,16 @@ class TokenService(private val tokenRepository: TokenRepository,
 
     fun hentKonsumenter(spørring: String) = tokenRepository.hentKonsumenter(spørring) ?: emptyList()
 
-    fun lagreNyttTokenForKonsument(konsumentId: UUID, jwt: String, issuedAt: Instant, txContext: TxContext? = null) =
-        txTemplate.doInTransaction(txContext) { ctx ->
-            tokenRepository.invaliderTokensForKonsument(konsumentId, ctx)
-            tokenRepository.lagreNyttToken(konsumentId, jwt, issuedAt, ctx)
+    fun lagreNyttTokenForKonsument(konsumentId: UUID, jwt: String, issuedAt: Instant) =
+        txTemplate.doInTransactionNullable { ctx ->
+            tokenRepository.invaliderTokensForKonsument(konsumentId)
+            tokenRepository.lagreNyttToken(konsumentId, jwt, issuedAt)
         }
 
-    fun hentPublicToken(txContext: TxContext? = null) =
-        txTemplate.doInTransaction(txContext) { ctx ->
-            tokenRepository.hentKonsument(SecurityConfig.PUBLIC_TOKEN_ID, ctx).firstOrNull()?.let { k ->
-                tokenRepository.hentGyldigeTokens(k.id, ctx)?.firstOrNull()
+    fun hentPublicToken() =
+        txTemplate.doInTransactionNullable { ctx ->
+            tokenRepository.hentKonsument(SecurityConfig.PUBLIC_TOKEN_ID).firstOrNull()?.let { k ->
+                tokenRepository.hentGyldigeTokens(k.id)?.firstOrNull()
             }
         }
 
@@ -52,13 +51,13 @@ class TokenService(private val tokenRepository: TokenRepository,
      * Invaliderer eventuelt eksisterende public token og oppretter et nytt
      * @return nytt public token
      */
-    fun invaliderOgOpprettNyttPublicToken(txContext: TxContext? = null): String =
-        txTemplate.doInTransaction(txContext) { ctx ->
-            val konsument = tokenRepository.hentKonsument(SecurityConfig.PUBLIC_TOKEN_ID, ctx).first()
-            tokenRepository.invaliderTokensForKonsument(konsument.id, ctx)
+    fun invaliderOgOpprettNyttPublicToken(): String =
+        txTemplate.doInTransaction { ctx ->
+            val konsument = tokenRepository.hentKonsument(SecurityConfig.PUBLIC_TOKEN_ID).first()
+            tokenRepository.invaliderTokensForKonsument(konsument.id)
 
-            return@doInTransaction opprettPublicToken(arbeidsplassen = konsument, txContext = ctx)
-        }!!
+            return@doInTransaction opprettPublicToken(arbeidsplassen = konsument)
+        }
 
     fun initPublicTokenHvisLeader() {
         if (leaderElector.isLeader()) {
@@ -72,30 +71,29 @@ class TokenService(private val tokenRepository: TokenRepository,
         }
     }
 
-    private fun opprettArbeidsplassenKonsument(txContext: TxContext? = null): KonsumentDTO =
-        txTemplate.doInTransaction(txContext) { ctx ->
+    private fun opprettArbeidsplassenKonsument(): KonsumentDTO =
+        txTemplate.doInTransaction { ctx ->
             val arbeidsplassen = hentEllerOpprettKonsument(
                 KonsumentDTO(
                     identifikator = SecurityConfig.PUBLIC_TOKEN_ID,
                     email = "nav.team.arbeidsplassen@nav.no",
                     telefon = "55 55 33 33",
                     kontaktperson = "Team Arbeidsmarked"
-                ), ctx
+                )
             )
             return@doInTransaction arbeidsplassen
-        }!!
+        }
 
     private fun opprettPublicToken(arbeidsplassen: KonsumentDTO,
-                                   varighet: TemporalAmount = Duration.ofDays(35),
-                                   txContext: TxContext? = null): String =
-        txTemplate.doInTransaction(txContext) { ctx ->
+                                   varighet: TemporalAmount = Duration.ofDays(35)): String =
+        txTemplate.doInTransaction { ctx ->
             val issuedAt = Instant.now()
             val expires = issuedAt.plus(varighet)
             val jwtToken = securityConfig.newTokenFor(arbeidsplassen, issuedAt, expires)
 
-            lagreNyttTokenForKonsument(arbeidsplassen.id, jwtToken, issuedAt, ctx)
+            lagreNyttTokenForKonsument(arbeidsplassen.id, jwtToken, issuedAt)
             return@doInTransaction jwtToken
-        }!!
+        }
 }
 
 

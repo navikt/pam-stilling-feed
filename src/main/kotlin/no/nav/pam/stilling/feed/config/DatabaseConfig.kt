@@ -2,11 +2,12 @@ package no.nav.pam.stilling.feed.config
 
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
-import com.zaxxer.hikari.metrics.prometheus.PrometheusMetricsTrackerFactory
-import io.prometheus.client.CollectorRegistry
+import io.micrometer.prometheusmetrics.PrometheusConfig
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 
 class DatabaseConfig(env: Map<String, String>,
-                     private val collectorRegistry: CollectorRegistry = CollectorRegistry.defaultRegistry) {
+                     private val meterRegistry: PrometheusMeterRegistry =
+                         PrometheusMeterRegistry(PrometheusConfig.DEFAULT)) {
     private val host = env.variable("DB_HOST")
     private val port = env.variable("DB_PORT")
     private val database = env.variable("DB_DATABASE")
@@ -21,7 +22,7 @@ class DatabaseConfig(env: Map<String, String>,
         initializationFailTimeout = 5000
         username = user
         password = pw
-        metricsTrackerFactory = PrometheusMetricsTrackerFactory(collectorRegistry)
+        metricRegistry = meterRegistry
         validate()
     }.let(::HikariDataSource)
 

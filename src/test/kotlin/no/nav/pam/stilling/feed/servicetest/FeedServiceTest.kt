@@ -1,6 +1,7 @@
 package no.nav.pam.stilling.feed.servicetest
 
 import no.nav.pam.stilling.feed.*
+import no.nav.pam.stilling.feed.config.TxPropagation
 import no.nav.pam.stilling.feed.config.TxTemplate
 import no.nav.pam.stilling.feed.dto.AdDTO
 import no.nav.pam.stilling.feed.dto.Feed
@@ -133,13 +134,14 @@ class FeedServiceTest {
             .copy(uuid = UUID.randomUUID().toString())
 
         txTemplate.doInTransaction { ctx ->
-            feedService.lagreNyStillingsAnnonse(ad1, ctx)
+            feedService.lagreNyStillingsAnnonse(ad1)
 
-            txTemplate.doInTransaction { ctxNew -> // Implisitt ny kontekst som ikke er del av eksisterende transaksjon
-                feedService.lagreNyStillingsAnnonseFraJson(objectMapper.writeValueAsString(ad2), ctxNew)
+            txTemplate.doInTransaction(TxPropagation.REQUIRES_NEW) { ctxNew -> // Implisitt ny kontekst som ikke er del av eksisterende transaksjon
+                feedService.lagreNyStillingsAnnonseFraJson(objectMapper.writeValueAsString(ad2))
             }
-            txTemplate.doInTransaction(ctx) { ctxNew -> // Propagerer kontekst og deltar dermed i eksisterende transaksjon
-                feedService.lagreNyStillingsAnnonseFraJson(objectMapper.writeValueAsString(ad2), ctxNew)
+
+            txTemplate.doInTransaction { ctxNew2 -> // Propagerer kontekst og deltar dermed i eksisterende transaksjon
+                feedService.lagreNyStillingsAnnonseFraJson(objectMapper.writeValueAsString(ad2))
             }
             ctx.setRollbackOnly()
         }

@@ -1,6 +1,5 @@
 package no.nav.pam.stilling.feed
 
-import no.nav.pam.stilling.feed.config.TxContext
 import no.nav.pam.stilling.feed.config.TxTemplate
 import no.nav.pam.stilling.feed.dto.KonsumentDTO
 import org.junit.jupiter.api.BeforeAll
@@ -33,9 +32,9 @@ class TxTemplateTest {
         assertEquals(0, hentAlleKonsumenter().size)
 
         txTemplate.doInTransaction { ctx ->
-            tokenRepository.opprettKonsument(konsumentSomSkalFeile, ctx)
-            assertEquals(1, hentAlleKonsumenter(ctx).size)
-            assertThrows<PSQLException> { tokenRepository.opprettKonsument(konsumentSomSkalFeile, ctx) }
+            tokenRepository.opprettKonsument(konsumentSomSkalFeile)
+            assertEquals(1, hentAlleKonsumenter().size)
+            assertThrows<PSQLException> { tokenRepository.opprettKonsument(konsumentSomSkalFeile) }
         }
 
         assertEquals(0, hentAlleKonsumenter().size)
@@ -45,13 +44,13 @@ class TxTemplateTest {
         assertEquals(konsumentSomSkalBestå.id, hentAlleKonsumenter().first().id)
 
         txTemplate.doInTransaction { ctx ->
-            tokenRepository.opprettKonsument(konsumentSomSkalFeile, ctx)
-            assertEquals(2, hentAlleKonsumenter(ctx).size)
+            tokenRepository.opprettKonsument(konsumentSomSkalFeile)
+            assertEquals(2, hentAlleKonsumenter().size)
             assertContentEquals(
                 listOf(konsumentSomSkalBestå.id, konsumentSomSkalFeile.id),
-                hentAlleKonsumenter(ctx).map { it.id }
+                hentAlleKonsumenter().map { it.id }
             )
-            assertThrows<PSQLException> { tokenRepository.opprettKonsument(konsumentSomSkalFeile, ctx) }
+            assertThrows<PSQLException> { tokenRepository.opprettKonsument(konsumentSomSkalFeile) }
         }
 
         assertEquals(1, hentAlleKonsumenter().size)
@@ -64,8 +63,8 @@ class TxTemplateTest {
 
         assertThrows<Exception> {
             txTemplate.doInTransaction<Nothing> { ctx ->
-                tokenRepository.opprettKonsument(KonsumentDTO(UUID.randomUUID(), "", "", "", ""), ctx)
-                assertEquals(1, hentAlleKonsumenter(ctx).size)
+                tokenRepository.opprettKonsument(KonsumentDTO(UUID.randomUUID(), "", "", "", ""))
+                assertEquals(1, hentAlleKonsumenter().size)
                 throw Exception()
             }
         }
@@ -73,8 +72,8 @@ class TxTemplateTest {
         assertEquals(0, hentAlleKonsumenter().size)
     }
 
-    private fun hentAlleKonsumenter(txContext: TxContext? = null) =
-        txTemplate.doInTransaction(txContext) { ctx ->
+    private fun hentAlleKonsumenter() =
+        txTemplate.doInTransaction { ctx ->
             ctx.connection()
                 .prepareStatement("SELECT * FROM feed_consumer").executeQuery()
                 .use { generateSequence { if (it.next()) KonsumentDTO.fraDatabase(it) else null }.toList() }

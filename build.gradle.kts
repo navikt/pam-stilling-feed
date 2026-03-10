@@ -1,9 +1,6 @@
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-
 plugins {
-    kotlin("jvm") version "2.1.10"
-    kotlin("kapt") version "2.1.10"
-    id("com.gradleup.shadow") version "8.3.6"
+    kotlin("jvm") version "2.3.10"
+    kotlin("kapt") version "2.3.10"
     application
 }
 
@@ -25,14 +22,26 @@ tasks.test {
     useJUnitPlatform()
 }
 
-tasks.withType<ShadowJar>{
-    mergeServiceFiles()
+kapt {
+    javacOptions {
+        option("--enable-preview", "")
+    }
+}
+tasks.register<JavaExec>("runLocal") {
+    classpath(sourceSets["test"].runtimeClasspath)
+    mainClass = "no.nav.pam.stilling.feed.LocalApplicationKt"
+    // Unsafe er for netty og trengs egentlig kun for å kjøre tester
+    jvmArgs("--enable-preview","--sun-misc-unsafe-memory-access=allow")
+}
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
 }
 
-val javalinVersion = "6.5.0"
-val testcontainersVersion = "1.20.6"
-val micrometerVersion = "1.12.13"
-val flywayVersion = "11.3.4"
+val javalinVersion = "6.7.0"
+val micrometerVersion = "1.15.5"
+val flywayVersion = "11.15.0"
 dependencies {
     implementation(kotlin("stdlib"))
     implementation("io.javalin:javalin:$javalinVersion")
@@ -41,18 +50,18 @@ dependencies {
     implementation("io.micrometer:micrometer-core:$micrometerVersion")
     implementation("io.micrometer:micrometer-registry-prometheus:$micrometerVersion")
 
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.18.3")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.16.0")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.20.0")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.20.0")
 
-    implementation("ch.qos.logback:logback-classic:1.5.17")
-    implementation("net.logstash.logback:logstash-logback-encoder:8.0")
-    implementation("com.auth0:java-jwt:4.4.0")
+    implementation("ch.qos.logback:logback-classic:1.5.20")
+    implementation("net.logstash.logback:logstash-logback-encoder:8.1")
+    implementation("com.auth0:java-jwt:4.5.0")
     implementation("org.flywaydb:flyway-core:$flywayVersion")
     implementation("org.flywaydb:flyway-database-postgresql:$flywayVersion")
-    implementation("org.postgresql:postgresql:42.7.5")
+    implementation("org.postgresql:postgresql:42.7.8")
     implementation("com.zaxxer:HikariCP:6.2.1")
 
-    implementation("org.apache.kafka:kafka-clients:3.8.0")
+    implementation("org.apache.kafka:kafka-clients:4.1.0")
 
     implementation("no.nav.arbeid.pam:pam-styrk-yrkeskategori-mapper:1.20241030-dc26b440")
 
@@ -63,10 +72,12 @@ dependencies {
     implementation("io.javalin.community.openapi:javalin-redoc-plugin:$javalinVersion") // for ReDoc UI
 
     testImplementation(kotlin("test"))
-    testImplementation("org.assertj:assertj-core:3.24.2")
-    testImplementation("org.testcontainers:testcontainers:$testcontainersVersion")
-    testImplementation("org.testcontainers:kafka:$testcontainersVersion")
-    testImplementation("org.testcontainers:postgresql:$testcontainersVersion")
-    testImplementation("org.testcontainers:junit-jupiter:$testcontainersVersion")
-    testImplementation("io.mockk:mockk:1.13.8")
+    testImplementation("org.assertj:assertj-core:3.27.6")
+    testImplementation(platform("org.testcontainers:testcontainers-bom:2.0.3"))
+    testImplementation("org.testcontainers:testcontainers")
+    testImplementation("org.testcontainers:testcontainers-kafka")
+    testImplementation("org.testcontainers:testcontainers-postgresql")
+    testImplementation("org.testcontainers:testcontainers-junit-jupiter")
+    testImplementation("io.mockk:mockk:1.14.6")
+    testImplementation("net.bytebuddy:byte-buddy:1.17.8") // Må overstyre mockk sin bytebuddy for å støtte moderne java
 }

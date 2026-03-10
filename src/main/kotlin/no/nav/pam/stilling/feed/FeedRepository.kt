@@ -1,7 +1,6 @@
 package no.nav.pam.stilling.feed
 
 import no.nav.pam.stilling.feed.config.PSTMTUtil
-import no.nav.pam.stilling.feed.config.TxContext
 import no.nav.pam.stilling.feed.config.TxTemplate
 import no.nav.pam.stilling.feed.dto.Feed
 import no.nav.pam.stilling.feed.dto.FeedItem
@@ -13,8 +12,8 @@ import java.time.ZonedDateTime
 import java.util.*
 
 class FeedRepository(private val txTemplate: TxTemplate) {
-    fun lagreFeedItem(feedItem: FeedItem, txContext: TxContext? = null): Int? {
-        return txTemplate.doInTransaction(txContext) { ctx ->
+    fun lagreFeedItem(feedItem: FeedItem): Int? {
+        return txTemplate.doInTransactionNullable { ctx ->
             val sql = """
                 insert into feed_item(id, json, sist_endret, status, kilde)
                 values(?, ?, ?, ?, ?)
@@ -35,12 +34,12 @@ class FeedRepository(private val txTemplate: TxTemplate) {
             }.use { statement ->
                 numRows = statement.executeUpdate()
             }
-            return@doInTransaction numRows
+            return@doInTransactionNullable numRows
         }
     }
 
-    fun oppdaterFeedItemJson(id: UUID, oppdatertJson: String, txContext: TxContext? = null) =
-        txTemplate.doInTransaction(txContext) { ctx ->
+    fun oppdaterFeedItemJson(id: UUID, oppdatertJson: String) =
+        txTemplate.doInTransaction { ctx ->
             return@doInTransaction ctx.connection().prepareStatement("UPDATE feed_item SET json = ? WHERE id = ?")
                 .apply {
                     this.setString(1, oppdatertJson)
@@ -48,7 +47,7 @@ class FeedRepository(private val txTemplate: TxTemplate) {
                 }.executeUpdate()
         } ?: 0
 
-    fun oppdaterKildeForFeedItem(id: UUID, kilde: String, txContext: TxContext? = null) = txTemplate.doInTransaction(txContext) { ctx ->
+    fun oppdaterKildeForFeedItem(id: UUID, kilde: String) = txTemplate.doInTransaction { ctx ->
         val connection = ctx.connection()
         var updated = 0
 
@@ -65,8 +64,8 @@ class FeedRepository(private val txTemplate: TxTemplate) {
         return@doInTransaction updated
     } ?: 0
 
-    fun hentFeedItem(id: UUID, skalIgnorereFinn: Boolean, txContext: TxContext? = null): FeedItem? {
-        return txTemplate.doInTransaction(txContext) { ctx ->
+    fun hentFeedItem(id: UUID, skalIgnorereFinn: Boolean): FeedItem? {
+        return txTemplate.doInTransactionNullable { ctx ->
             val ignorerFinnClause = if (skalIgnorereFinn) " and kilde != 'FINN'" else ""
             val sql = """
                 select id, json, sist_endret, status, kilde
@@ -79,14 +78,14 @@ class FeedRepository(private val txTemplate: TxTemplate) {
             }.use { statement ->
                 val resultSet = statement.executeQuery()
                 if (!resultSet.next())
-                    return@doInTransaction null
-                return@doInTransaction FeedItem.fraDatabase(resultSet)
+                    return@doInTransactionNullable null
+                return@doInTransactionNullable FeedItem.fraDatabase(resultSet)
             }
         }
     }
 
-    fun hentDirekteMeldteFeedItem(txContext: TxContext? = null): MutableList<FeedItem>? {
-        return txTemplate.doInTransaction(txContext) { ctx ->
+    fun hentDirekteMeldteFeedItem(): MutableList<FeedItem>? {
+        return txTemplate.doInTransactionNullable { ctx ->
             val sql = """
                 select id, json, sist_endret, status, kilde
                 from feed_item
@@ -99,13 +98,13 @@ class FeedRepository(private val txTemplate: TxTemplate) {
                 val items = mutableListOf<FeedItem>()
                 while (resultSet.next())
                     items.add(FeedItem.fraDatabase(resultSet))
-                return@doInTransaction items
+                return@doInTransactionNullable items
             }
         }
     }
 
-    fun lagreFeedPageItem(feedPage: FeedPageItem, kilde: String?, txContext: TxContext? = null): FeedPageItem {
-        return txTemplate.doInTransaction(txContext) { ctx ->
+    fun lagreFeedPageItem(feedPage: FeedPageItem, kilde: String?): FeedPageItem {
+        return txTemplate.doInTransaction { ctx ->
             val sql = """
                 insert into feed_page_item(id, status, title, business_name, municipal, feed_item_id, kilde)
                 values(?, ?, ?, ?, ?, ?, ?)
@@ -130,11 +129,11 @@ class FeedRepository(private val txTemplate: TxTemplate) {
                 }
             }
             return@doInTransaction feedPage
-        }!!
+        }
     }
 
-    fun hentFeedPageItem(id: UUID, skalIgnorereFinn: Boolean, txContext: TxContext? = null): FeedPageItem? {
-        return txTemplate.doInTransaction(txContext) { ctx ->
+    fun hentFeedPageItem(id: UUID, skalIgnorereFinn: Boolean): FeedPageItem? {
+        return txTemplate.doInTransactionNullable { ctx ->
             val ignorerFinnClause = if (skalIgnorereFinn) " and kilde != 'FINN'" else ""
             val sql = """
                 select id, sist_endret, seq_no, status, title, business_name, municipal, feed_item_id
@@ -148,8 +147,8 @@ class FeedRepository(private val txTemplate: TxTemplate) {
             }.use { statement ->
                 val resultSet = statement.executeQuery()
                 if (!resultSet.next())
-                    return@doInTransaction null
-                return@doInTransaction FeedPageItem.fraDatabase(resultSet)
+                    return@doInTransactionNullable null
+                return@doInTransactionNullable FeedPageItem.fraDatabase(resultSet)
             }
         }
     }
@@ -157,10 +156,9 @@ class FeedRepository(private val txTemplate: TxTemplate) {
     fun hentFeedPageItemsNyereEnn(
         seqNo: Long, antall: Int = Feed.defaultPageSize,
         sistEndret: ZonedDateTime? = null,
-        skalIgnorereFinn: Boolean,
-        txContext: TxContext? = null
+        skalIgnorereFinn: Boolean
     ): MutableList<FeedPageItem> {
-        return txTemplate.doInTransaction(txContext) { ctx ->
+        return txTemplate.doInTransaction { ctx ->
             val feedPageItems = mutableListOf<FeedPageItem>()
             // NB: Dette garanterer ikke at vi har monotont stigende sist_endret...
             var sistEndretClause = ""
@@ -190,11 +188,11 @@ class FeedRepository(private val txTemplate: TxTemplate) {
                     feedPageItems.add(FeedPageItem.fraDatabase(resultSet))
                 return@doInTransaction feedPageItems
             }
-        }!!
+        }
     }
 
-    fun hentFørsteSide(skalIgnorereFinn: Boolean, txContext: TxContext? = null): FeedPageItem? {
-        return txTemplate.doInTransaction(txContext) { ctx ->
+    fun hentFørsteSide(skalIgnorereFinn: Boolean): FeedPageItem? {
+        return txTemplate.doInTransactionNullable { ctx ->
             val ignorerFinnClause = if (skalIgnorereFinn) " and kilde != 'FINN'" else ""
 
             val sql = """
@@ -205,14 +203,14 @@ class FeedRepository(private val txTemplate: TxTemplate) {
             val c = ctx.connection()
             c.prepareStatement(sql).use { statement ->
                 val resultSet = statement.executeQuery()
-                if (!resultSet.next()) return@doInTransaction null
-                return@doInTransaction FeedPageItem.fraDatabase(resultSet)
+                if (!resultSet.next()) return@doInTransactionNullable null
+                return@doInTransactionNullable FeedPageItem.fraDatabase(resultSet)
             }
         }
     }
 
-    fun hentSisteSide(skalIgnorereFinn: Boolean, txContext: TxContext? = null): FeedPageItem? {
-        return txTemplate.doInTransaction(txContext) { ctx ->
+    fun hentSisteSide(skalIgnorereFinn: Boolean): FeedPageItem? {
+        return txTemplate.doInTransactionNullable { ctx ->
             // TODO ignorer finn
             val ignorerFinnClause = if (skalIgnorereFinn) " where f2.kilde != 'FINN'" else ""
 
@@ -224,14 +222,14 @@ class FeedRepository(private val txTemplate: TxTemplate) {
             val c = ctx.connection()
             c.prepareStatement(sql).use { statement ->
                 val resultSet = statement.executeQuery()
-                if (!resultSet.next()) return@doInTransaction null
-                return@doInTransaction FeedPageItem.fraDatabase(resultSet)
+                if (!resultSet.next()) return@doInTransactionNullable null
+                return@doInTransactionNullable FeedPageItem.fraDatabase(resultSet)
             }
         }
     }
 
-    fun hentFørsteSideNyereEnn(cutoff: ZonedDateTime, skalIgnorereFinn: Boolean, txContext: TxContext? = null) =
-        txTemplate.doInTransaction(txContext) { ctx ->
+    fun hentFørsteSideNyereEnn(cutoff: ZonedDateTime, skalIgnorereFinn: Boolean) =
+        txTemplate.doInTransactionNullable { ctx ->
             val ignorerFinnClause = if (skalIgnorereFinn) " and kilde != 'FINN'" else ""
 
             val sql = """

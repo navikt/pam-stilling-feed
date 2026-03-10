@@ -6,13 +6,13 @@ import java.sql.PreparedStatement
 import javax.sql.DataSource
 
 /**
- * TxTemplate er løst basert på ideen bak spring TransactionTemplate – bare mye enklere og mer eksplisitt.
+ * TxTemplate er løst basert på ideen bak spring TransactionTemplate – bare mye enklere.
  * Bruksmønsteret er slik:
  *
  * ```
  * txTemplate = TxTemplate(HikariDataSource(...))
  *
- * txTemplate.doInTransaction(txContext) { ctx ->
+ * txTemplate.doInTransaction { ctx ->
  *   val conn = ctx.connection()  // IKKE LUKK CONNECTION ETTER BRUK
  *   conn.prepareStatement("heftig sql kode her").apply {
  *      it.setObject(verdier som skal inn i spørringen)
@@ -24,67 +24,108 @@ import javax.sql.DataSource
  *   }
  * }
  * ```
+ * Internt ligger transaksjonskonteksten i en ScopedValue. Dette er en eksperimentell feature i java 21-23
+ * som håndterer lettvektstråder (LWT) bedre enn ThreadLocal.
+ * Default transaksjonssemantikk er PropagationRequired. Dvs at det blir startet en ny transaksjon hvis det ikke allerede finnes
+ * en pågående transaksjon. Hvis det finnes en pågående transaksjon, så blir ny transaksjon del av eksisterende.
+ *
+ * Det er mulig å eksplisitt spesifisere at en nestet transasaksjon skal starte en ny transaksjon (PropagationRequiresNew)
+ *
+ * Ved hissig bruk av corutiner, der én transaksjon spenner over flere corutiner, kan det bli problemer.
+ * Hvis du ikke yielder, eller bruker en LWT dispatcher, så bør det gå greit.
+ *
+ * Her er du ute i ruskete farvann. Det er en risiko for at transaksjonskonteksten
+ * vil flyte mellom corutinene – altså noe som vil resultere i sporadiske og vanskelige feil.
  *
  * Prinsipper:
  *  - Du får JDBC connection fra TxTemplate
  *  - Du lukker ikke JDBC connection selv
  *  - Du lukker ressurser du bruker fra connection (Statement/PreparedStatement)
- *  - Hvis du skal kalle andre tjenester/funksjoner som skal være en del av samme transkasjon, så sender du med
- *    eksisterende txTemplate. TxTemplate holder styr på context og om det allerede eksisterer en transaksjon
- *
+ *  - TxTemplate holder styr på context og om det allerede eksisterer en transaksjon
  *
  *
  * Likheter og forskjeller fra Spring TransactionTemplate
  * - TxTemplate forholder seg kun til JDBC connection fra en DataSource. Det er kun testet med postgresql og HikariCP
  *   Spring TransactionTemplate er supergenerisk og er i stand til å joine transaksjoner fra andre datakilder (f.eks køer)
+ * - Både Spring TxTemplate har default propagation=PropagationRequired, og begge har mulighet for PropagationRequiresNew
  * - Både Spring og TxTemplate baserer seg på at du må utføre det som skal gjøres i en transaksjon innenfor en
  *   doInTransaction() blokk.
  * - Spring tilbyr annotasjoner og aspekter for å abstrahere bort doInTransaction - TxTemplate vil aldri gjøre det
  * - Spring lagrer transaction context i en ThreadLocal slik at du ikke trenger å propagere context selv
- *   TxTemplate gjør det eksplisitt. Det gir mer "støy" i koden, men er utrolig mye mer robust,
+ *   TxTemplate bruker ScopedValue til dette, noe som fungerer bedre med virtuelle tråder og som er tryggere mtp lekkasje.
  *
  */
 class TxTemplate(private val ds: DataSource) {
     companion object {
         private val LOG = LoggerFactory.getLogger(TxTemplate::class.java)
+        private val scopedValueTxContext = ScopedValue.newInstance<TxContext>()
     }
 
-    fun <R> doInTransaction(existingContext: TxContext? = null, txBlock: (ctx: TxContext) -> R): R? {
-        val conn = existingContext?.connection() ?: ds.connection
-        val isNestedTransaction = existingContext != null
+    fun <R> doInTransactionNullable(
+        propagation: TxPropagation = TxPropagation.REQUIRED,
+        txBlock: (ctx: TxContext) -> R
+    ): R? {
+        val isNestedTransaction = scopedValueTxContext.isBound && propagation == TxPropagation.REQUIRED
+        val conn = if (isNestedTransaction) scopedValueTxContext.get().connection() else ds.connection
 
         val autocommit = conn.autoCommit
         conn.autoCommit = false
 
-        var result: R? = null
-        var resultEx: Throwable? = null
+        val ctx = if (isNestedTransaction) scopedValueTxContext.get() else TxContext(conn)
 
-        val ctx = existingContext ?: TxContext(conn)
-
-        try {
-            result = txBlock(ctx)
-        } catch (e: Exception) {
-            LOG.warn("Exception nådde TxTemplate. Ruller tilbake transaksjon: ${e.message}", e)
-            ctx.setRollbackOnly()
-            resultEx = e
-        }
-
-        if (!isNestedTransaction) {
-            conn.use { c ->
-                if (ctx.isRollbackOnly())
-                    c.rollback()
-                else
-                    c.commit()
-                c.autoCommit = autocommit
+        // NB: ScopedValue.where er litt endret fra java 21 til 23.
+        //     I Java 21 så funker ScopedValue.callWhere helt fint, i 23 må det deles opp
+        return ScopedValue.where(scopedValueTxContext, ctx).call<R?, Throwable> {
+            var result: R? = null
+            var resultEx: Throwable? = null
+            try {
+                result = txBlock(ctx)
+            } catch (e: Exception) {
+                LOG.warn("Exception nådde TxTemplate. Ruller tilbake transaksjon: ${e.message}", e)
+                ctx.setRollbackOnly()
+                resultEx = e
             }
-        }
 
-        if (result == null && resultEx != null)
-            throw resultEx
-        return result
+            if (!isNestedTransaction) {
+                conn.use { c ->
+                    if (ctx.isRollbackOnly())
+                        c.rollback()
+                    else
+                        c.commit()
+                    c.autoCommit = autocommit
+                }
+            }
+            if (result == null && resultEx != null)
+                throw resultEx
+            result
+        }
     }
+
+    fun <R> doInTransaction(
+        propagation: TxPropagation = TxPropagation.REQUIRED,
+        txBlock: (ctx: TxContext) -> R
+    ): R {
+        val msg =
+            "Uventet resultat, mottok null. Antageligvis programmeringsfeil, vurder å bruke doInTransaction direkte."
+        return doInTransactionNullable(propagation, txBlock) ?: throw IllegalStateException(msg)
+    }
+
 }
 
+enum class TxPropagation {
+    /** REQUIRED er default propagation. Da vil det startes en ny
+     * transaksjon hvis det ikke finnes en fra før. Hvis det finnes en fra før så blir
+     * dette en del av den eksisterende transaksjonen
+     */
+    REQUIRED,
+
+    /**
+     * REQUIRES_NEW skal du tenke deg godt om før du bruker. Det er som regel feil å
+     * bruke dette. REQUIRES_NEW vil starte en ny transaksjon selv om det finnes en fra før.
+     * Disse transaksjonene er uavhengig av hverandre.
+     */
+    REQUIRES_NEW
+}
 class TxContext(private val conn: Connection) {
     private var rollbackOnly = false
 
@@ -162,3 +203,4 @@ object PSTMTUtil {
             mr.value
         }.toList()
 }
+

@@ -1,6 +1,5 @@
 package no.nav.pam.stilling.feed
 
-import no.nav.pam.stilling.feed.config.TxContext
 import no.nav.pam.stilling.feed.config.TxTemplate
 import no.nav.pam.stilling.feed.dto.KonsumentDTO
 import java.sql.Timestamp
@@ -9,8 +8,8 @@ import java.time.LocalDateTime
 import java.util.*
 
 class TokenRepository(private val txTemplate: TxTemplate) {
-    fun opprettKonsument(konsument: KonsumentDTO, txContext: TxContext? = null) =
-        txTemplate.doInTransaction(txContext) { ctx ->
+    fun opprettKonsument(konsument: KonsumentDTO) =
+        txTemplate.doInTransaction { ctx ->
             ctx.connection()
                 .prepareStatement("""
                         INSERT INTO feed_consumer(id, identifikator, email, telefon, kontaktperson, opprettet)
@@ -26,8 +25,8 @@ class TokenRepository(private val txTemplate: TxTemplate) {
                 }.executeUpdate()
         }
 
-    fun hentKonsument(identifikator: String, txContext: TxContext? = null) : List<KonsumentDTO> =
-        txTemplate.doInTransaction(txContext) { ctx ->
+    fun hentKonsument(identifikator: String) : List<KonsumentDTO> =
+        txTemplate.doInTransaction { ctx ->
             val konsumenter = mutableListOf<KonsumentDTO>()
             val rs = ctx.connection()
                 .prepareStatement("SELECT * FROM feed_consumer " +
@@ -41,8 +40,8 @@ class TokenRepository(private val txTemplate: TxTemplate) {
              return@doInTransaction konsumenter
         } ?: emptyList()
 
-    fun hentKonsument(id: UUID, txContext: TxContext? = null) =
-        txTemplate.doInTransaction(txContext) { ctx ->
+    fun hentKonsument(id: UUID) =
+        txTemplate.doInTransaction { ctx ->
             ctx.connection()
                 .prepareStatement("SELECT * FROM feed_consumer WHERE id = ?")
                 .apply { setObject(1, id) }
@@ -50,8 +49,8 @@ class TokenRepository(private val txTemplate: TxTemplate) {
                 .takeIf { it.next() }?.let { KonsumentDTO.fraDatabase(it) }
         }
 
-    fun hentKonsumenter(spørring: String, txContext: TxContext? = null): List<KonsumentDTO>? =
-        txTemplate.doInTransaction(txContext) { ctx ->
+    fun hentKonsumenter(spørring: String): List<KonsumentDTO>? =
+        txTemplate.doInTransactionNullable { ctx ->
             val konsumenter = mutableListOf<KonsumentDTO>()
             val rs = ctx.connection()
                 .prepareStatement("SELECT * FROM feed_consumer "
@@ -63,11 +62,11 @@ class TokenRepository(private val txTemplate: TxTemplate) {
             while (rs.next())
                 konsumenter.add(KonsumentDTO.fraDatabase(rs))
 
-            return@doInTransaction konsumenter
+            return@doInTransactionNullable konsumenter
         }
 
-    fun invaliderTokensForKonsument(konsumentId: UUID, txContext: TxContext? = null) =
-        txTemplate.doInTransaction(txContext) { ctx ->
+    fun invaliderTokensForKonsument(konsumentId: UUID) =
+        txTemplate.doInTransaction { ctx ->
             ctx.connection()
                 .prepareStatement("UPDATE token SET invalidated=TRUE, invalidated_at=? WHERE consumer_id=?")
                 .apply {
@@ -76,8 +75,8 @@ class TokenRepository(private val txTemplate: TxTemplate) {
                 }.executeUpdate()
         }
 
-    fun lagreNyttToken(konsumentId: UUID, jwt: String, issuedAt: Instant, txContext: TxContext? = null) =
-        txTemplate.doInTransaction(txContext) { ctx ->
+    fun lagreNyttToken(konsumentId: UUID, jwt: String, issuedAt: Instant) =
+        txTemplate.doInTransaction { ctx ->
             ctx.connection()
                 .prepareStatement("INSERT INTO token(id, consumer_id, jwt, issued_at) VALUES(?, ?, ?, ?)")
                 .apply {
@@ -88,13 +87,13 @@ class TokenRepository(private val txTemplate: TxTemplate) {
                 }.executeUpdate()
         }
 
-    fun hentInvaliderteTokens(txContext: TxContext? = null) = txTemplate.doInTransaction(txContext) { ctx ->
+    fun hentInvaliderteTokens() = txTemplate.doInTransaction { ctx ->
         ctx.connection().prepareStatement("SELECT jwt FROM token WHERE invalidated=true").executeQuery().use {
             generateSequence { if (it.next()) it.getString(1) else null }.toList()
         }
     }
 
-    fun hentGyldigeTokens(konsumentId: UUID? = null, txContext: TxContext? = null) = txTemplate.doInTransaction(txContext) { ctx ->
+    fun hentGyldigeTokens(konsumentId: UUID? = null) = txTemplate.doInTransaction { ctx ->
         val consumerClause = konsumentId?.let { "and consumer_id = ? " } ?: ""
         ctx.connection().prepareStatement("SELECT jwt " +
                 "FROM token " +

@@ -2,8 +2,7 @@ package no.nav.pam.stilling.feed
 
 import io.javalin.Javalin
 import io.javalin.http.HttpStatus
-import io.micrometer.prometheus.PrometheusMeterRegistry
-import io.prometheus.client.exporter.common.TextFormat
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.pam.stilling.feed.sikkerhet.Rolle
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -19,7 +18,7 @@ class NaisController(
         )
         javalin.get(
             "/internal/prometheus",
-            { it.contentType(TextFormat.CONTENT_TYPE_004).result(prometheusMeterRegistry.scrape()) },
+            { it.contentType("text/plain; version=0.0.4; charset=utf-8").result(prometheusMeterRegistry.scrape()) },
             Rolle.UNPROTECTED
         )
     }
