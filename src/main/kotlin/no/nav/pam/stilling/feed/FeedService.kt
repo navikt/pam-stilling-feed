@@ -46,19 +46,17 @@ class FeedService(
             return null
         }
 
-        return txTemplate.doInTransaction { ctx ->
-            val feedAd = mapAd(ad, stillingUrlBase)
-            val active = ad.status == "ACTIVE" && ad.source != "DIR" &&
-                    ad.privacy == "SHOW_ALL"
+        return txTemplate.doInTransaction { _ ->
+            val active = isActive(ad)
             val statusDescription = if (active) "ACTIVE" else "INACTIVE"
-            val feedJson = if (active) objectMapper.writeValueAsString(feedAd) else ""
+            val feedJson = if (active) objectMapper.writeValueAsString(mapAd(ad, stillingUrlBase)) else ""
 
             val feedItem = FeedItem(
                 uuid = UUID.fromString(ad.uuid),
                 json = feedJson,
                 sistEndret = ad.updated.atZone(ZoneId.of("Europe/Oslo")),
                 status = statusDescription,
-                kilde = feedAd.source
+                kilde = ad.source
             )
             feedRepository.lagreFeedItem(feedItem)
 
@@ -71,7 +69,7 @@ class FeedService(
                 feedItemId = feedItem.uuid,
                 seqNo = -1
             )
-            val lagretPageItem = feedRepository.lagreFeedPageItem(feedPageItem, feedAd.source)
+            val lagretPageItem = feedRepository.lagreFeedPageItem(feedPageItem, ad.source)
 
             return@doInTransaction Pair(feedItem, lagretPageItem)
         }
@@ -110,14 +108,15 @@ class FeedService(
             if (!adSkalMaskeres(ad)) ad
             else ad.copy(title = "...", contactList = mutableListOf(), employer = null, businessName = "")
 
-        return@map txTemplate.doInTransaction { ctx ->
-            val feedAd = mapAd(annonse, stillingUrlBase)
-            val active = annonse.status == "ACTIVE" && annonse.source != "DIR" &&
-                    annonse.privacy == "SHOW_ALL"
-            val feedJson = if (active) objectMapper.writeValueAsString(feedAd) else ""
+        return@map txTemplate.doInTransaction { _ ->
+            val active = isActive(annonse)
+            val feedJson = if (active) objectMapper.writeValueAsString(mapAd(annonse, stillingUrlBase)) else ""
             feedRepository.oppdaterFeedItemJson(UUID.fromString(annonse.uuid), feedJson)
         }
-    }.filterNotNull().sum()
+    }.sum()
+
+    private fun isActive(annonse: AdDTO): Boolean = annonse.status == "ACTIVE" && annonse.source != "DIR" &&
+            annonse.privacy == "SHOW_ALL"
 
     fun lagreNyeStillingsAnnonser(ads: List<AdDTO>, txContext: TxContext? = null): List<Pair<FeedItem, FeedPageItem>> {
         return txTemplate.doInTransaction { ctx ->
