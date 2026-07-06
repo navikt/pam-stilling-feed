@@ -85,7 +85,7 @@ fun startApp(
     feedService.fjernDIRFraFeed()
     tokenService.initPublicTokenHvisLeader()
 
-    val javalin = startJavalin(
+    startJavalin(
         port = 8080,
         jsonMapper = JavalinJackson(objectMapper),
         meterRegistry = prometheusRegistry,
@@ -132,13 +132,13 @@ fun startJavalin(
     naisController: NaisController,
     tokenController: TokenController,
     feedController: FeedController
-): Javalin {
+) {
     val requestLogger = LoggerFactory.getLogger("access")
     val micrometerPlugin = MicrometerPlugin { micrometerConfig ->
         micrometerConfig.registry = meterRegistry
     }
 
-    return Javalin.create {
+    Javalin.create {
         it.requestLogger.http { ctx, ms -> logRequest(ctx, ms, requestLogger) }
         it.http.defaultContentType = "application/json"
         it.jsonMapper(jsonMapper)
