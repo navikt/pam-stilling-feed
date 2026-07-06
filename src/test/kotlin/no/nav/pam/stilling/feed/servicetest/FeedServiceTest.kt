@@ -118,7 +118,7 @@ class FeedServiceTest {
         var side = feedService.hentFeedHvis(førsteSide!!.id)!!
         side.items.forEach { adIds.remove(it.feed_entry.uuid) }
         while (side.next_id != null) {
-            side = feedService.hentFeedHvis(side.next_id!!)!!
+            side = feedService.hentFeedHvis(side.next_id)!!
             side.items.forEach { adIds.remove(it.feed_entry.uuid) }
         }
         Assertions.assertThat(adIds).isEmpty()

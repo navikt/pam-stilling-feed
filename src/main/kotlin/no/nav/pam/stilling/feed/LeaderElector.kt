@@ -7,7 +7,7 @@ import com.fasterxml.jackson.module.kotlin.KotlinFeature
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import org.slf4j.LoggerFactory
 import java.net.InetAddress
-import java.net.URL
+import java.net.URI
 import java.time.LocalDateTime
 
 class LeaderElector(private val electorPath: String) {
@@ -42,7 +42,7 @@ class LeaderElector(private val electorPath: String) {
         if (electorPath == "NOLEADERELECTION")
             return hostname
         if (leader.isBlank() || lastCalled.isBefore(LocalDateTime.now().minusMinutes(2))) {
-            leader = mapper.readValue(URL(electorUri).readText(), Elector::class.java).name
+            leader = mapper.readValue(URI.create(electorUri).toURL().readText(), Elector::class.java).name
             lastCalled = LocalDateTime.now()
         }
         return leader
