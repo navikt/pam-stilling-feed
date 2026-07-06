@@ -39,29 +39,30 @@ java {
     }
 }
 
-val javalinVersion = "6.7.0"
-val micrometerVersion = "1.15.5"
+val javalinVersion = "7.2.2"
+val micrometerVersion = "1.16.5"
 val flywayVersion = "11.15.0"
+val jacksonVersion = "2.22.0"
+val kafkaVersion = "4.3.1"
+val lz4Version = "1.11.1"
 dependencies {
     implementation(kotlin("stdlib"))
-    implementation("io.javalin:javalin:$javalinVersion")
-    implementation("io.javalin:javalin-micrometer:$javalinVersion")
-    implementation("org.eclipse.jetty:jetty-util")
-    implementation("io.micrometer:micrometer-core:$micrometerVersion")
+    implementation(platform("io.javalin:javalin-bom:$javalinVersion"))
+    implementation("io.javalin:javalin")
+    implementation("io.javalin:javalin-micrometer")
     implementation("io.micrometer:micrometer-registry-prometheus:$micrometerVersion")
 
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.20.0")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.20.0")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
 
-    implementation("ch.qos.logback:logback-classic:1.5.20")
-    implementation("net.logstash.logback:logstash-logback-encoder:8.1")
-    implementation("com.auth0:java-jwt:4.5.0")
-    implementation("org.flywaydb:flyway-core:$flywayVersion")
+    implementation("ch.qos.logback:logback-classic:1.5.37")
+    implementation("net.logstash.logback:logstash-logback-encoder:9.0")
+    implementation("com.auth0:java-jwt:4.5.2")
     implementation("org.flywaydb:flyway-database-postgresql:$flywayVersion")
-    implementation("org.postgresql:postgresql:42.7.8")
-    implementation("com.zaxxer:HikariCP:6.2.1")
+    implementation("org.postgresql:postgresql:42.7.12")
+    implementation("com.zaxxer:HikariCP:7.1.0")
 
-    implementation("org.apache.kafka:kafka-clients:4.1.0")
+    implementation("org.apache.kafka:kafka-clients:$kafkaVersion")
 
     implementation("no.nav.arbeid.pam:pam-styrk-yrkeskategori-mapper:1.20241030-dc26b440")
 

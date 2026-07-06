@@ -3,60 +3,53 @@ package no.nav.pam.stilling.feed
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ArrayNode
 import com.fasterxml.jackson.databind.node.ObjectNode
-import io.javalin.openapi.BearerAuth
-import io.javalin.openapi.OpenApiContact
 import io.javalin.openapi.OpenApiInfo
-import io.javalin.openapi.OpenApiLicense
-import io.javalin.openapi.plugin.DefinitionConfiguration
 import io.javalin.openapi.plugin.OpenApiPlugin
-import io.javalin.openapi.plugin.SecurityComponentConfiguration
 import no.nav.pam.stilling.feed.sikkerhet.Rolle
 
 fun getOpenApiPlugin() = OpenApiPlugin { openApiConfig ->
     openApiConfig
         .withRoles(Rolle.UNPROTECTED)
         .withDocumentationPath("/api/openapi.json")
-        .withDefinitionConfiguration { _: String, definition: DefinitionConfiguration ->
+        .withDefinitionConfiguration { _: String, definition ->
             definition
-                .withInfo { openApiInfo: OpenApiInfo ->
-                    openApiInfo.title = "Public feed of job vacancies on Arbeidsplassen.no"
-                    openApiInfo.description =
-                        "OpenAPI specification for the public feed of job vacancies on Arbeidsplassen.no provided by the Norwegian Labour and Welfare Administration"
-                    openApiInfo.termsOfService = "https://arbeidsplassen.nav.no/vilkar-api"
-                    openApiInfo.version = "v1"
-                    openApiInfo.contact = OpenApiContact().apply {
-                        name = "Arbeidsplassen.no"
-                        email = "nav.team.arbeidsplassen@nav.no"
-                    }
-                    openApiInfo.license = OpenApiLicense().apply {
-                        name = "MIT License"
-                        identifier = "MIT"
-                    }
+                .info { openApiInfo: OpenApiInfo ->
+                    openApiInfo
+                        .title("Public feed of job vacancies on Arbeidsplassen.no")
+                        .description("OpenAPI specification for the public feed of job vacancies on Arbeidsplassen.no provided by the Norwegian Labour and Welfare Administration")
+                        .termsOfService("https://arbeidsplassen.nav.no/vilkar-api")
+                        .version("v1")
+                        .withContact {
+                            it.name("Arbeidsplassen.no")
+                            it.email("nav.team.arbeidsplassen@nav.no")
+                        }
+                        .withLicense {
+                            it.name("MIT License")
+                            it.identifier("MIT")
+                        }
                 }
-                .withServer { openApiServer ->
-                    openApiServer.url = "https://pam-stilling-feed.nav.no/"
-                    openApiServer.description = "Arbeidsplassen.no"
+                .server { openApiServer ->
+                    openApiServer.url("https://pam-stilling-feed.nav.no/")
+                    openApiServer.description("Arbeidsplassen.no")
                 }
-                .withSecurity(SecurityComponentConfiguration().apply {
-                    withSecurityScheme("BearerAuth", BearerAuth())
-                })
-                .withDefinitionProcessor { content ->
-                    // Javalin OpenApi støtter per nå ikke response-headers så vi må legge de på openApi-specen selv
-                    setResponseHeadersDocumentation(content)
+                .withBearerAuth("BearerAuth")
+        }
+        .withDefinitionProcessor { content: ObjectNode ->
+            // Javalin OpenApi støtter per nå ikke response-headers så vi må legge de på openApi-specen selv
+            setResponseHeadersDocumentation(content)
 
-                    //  Javalin OpenApi tolker per nå ikke @JsonIgnore og @JsonProperty, må håndteres på egenhånd
-                    removePropertiesFromSchema(content["components"]["schemas"]["Feed"], "etag", "lastModified")
-                    renamePropertiesInSchema(
-                        content["components"]["schemas"]["FeedLine"],
-                        "feed_entry" to "_feed_entry"
-                    )
-                    renamePropertiesInSchema(
-                        content["components"]["schemas"]["FeedEntryContent"],
-                        "json" to "ad_content"
-                    )
+            //  Javalin OpenApi tolker per nå ikke @JsonIgnore og @JsonProperty, må håndteres på egenhånd
+            removePropertiesFromSchema(content["components"]["schemas"]["Feed"], "etag", "lastModified")
+            renamePropertiesInSchema(
+                content["components"]["schemas"]["FeedLine"],
+                "feed_entry" to "_feed_entry"
+            )
+            renamePropertiesInSchema(
+                content["components"]["schemas"]["FeedEntryContent"],
+                "json" to "ad_content"
+            )
 
-                    content.toPrettyString()
-                }
+            content.toPrettyString()
         }
 }
 
