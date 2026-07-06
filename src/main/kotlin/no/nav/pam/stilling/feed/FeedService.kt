@@ -112,18 +112,10 @@ class FeedService(
 
         return@map txTemplate.doInTransaction { ctx ->
             val feedAd = mapAd(annonse, stillingUrlBase)
-            val active = annonse.status == "ACTIVE"
+            val active = annonse.status == "ACTIVE" && annonse.source != "DIR" &&
+                    annonse.privacy == "SHOW_ALL"
             val feedJson = if (active) objectMapper.writeValueAsString(feedAd) else ""
             feedRepository.oppdaterFeedItemJson(UUID.fromString(annonse.uuid), feedJson)
-        }
-    }.filterNotNull().sum()
-
-    // TODO Fjern denne etter gjennomkjøring, kun midlertidig for å migrere
-    fun lagreKilde(annonser: List<AdDTO>, txContext: TxContext? = null) = annonser.map { ad ->
-        val kilde = ad.source ?: return@map null
-
-        return@map txTemplate.doInTransaction { ctx ->
-            feedRepository.oppdaterKildeForFeedItem(UUID.fromString(ad.uuid), kilde)
         }
     }.filterNotNull().sum()
 

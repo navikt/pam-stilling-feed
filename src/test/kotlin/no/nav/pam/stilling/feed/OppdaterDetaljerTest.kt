@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import java.util.*
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -42,23 +41,34 @@ class OppdaterDetaljerTest {
     }
 
     @Test
-    fun `Oppdater kilde migrering oppdaterer kilde men ikke detaljer`() {
-        val ad = objectMapper.readValue(javaClass.getResourceAsStream("/ad_dto.json"), AdDTO::class.java).copy(uuid = UUID.randomUUID().toString(), contactList = mutableListOf(), source = null)
+    fun `OppdaterDetaljer oppdaterer orgnr`() {
+        val baseAd = objectMapper.readValue(javaClass.getResourceAsStream("/ad_dto.json"), AdDTO::class.java)
+        val ad = baseAd
+            .copy(
+                uuid = UUID.randomUUID().toString(),
+                employer = baseAd.employer?.copy(orgnr = null)
+            )
         feedService.lagreNyStillingsAnnonse(ad)
 
-        val hentetAdFørEndring = feedRepository.hentFeedItem(UUID.fromString(ad.uuid), false)!!
-        feedService.lagreKilde(listOf(ad.copy(contactList = mutableListOf(ContactDTO(id=null, name="Petter")), source = "Stillingsregistrering")))
-        val hentetAdEtterEndring = feedRepository.hentFeedItem(UUID.fromString(ad.uuid), false)!!
+        val hentetAdFørEndring = objectMapper.readValue<FeedAd>(feedRepository.hentFeedItem(UUID.fromString(ad.uuid), false)!!.json)
+        feedService.lagreOppdaterteDetaljer(listOf(ad.copy(employer = ad.employer?.copy(orgnr = "922422249"))))
+        val hentetAdEtterEndring = objectMapper.readValue<FeedAd>(feedRepository.hentFeedItem(UUID.fromString(ad.uuid), false)!!.json)
 
-        val førEndringJson = objectMapper.readValue<FeedAd>(hentetAdFørEndring.json)
-        val etterEndringJson = objectMapper.readValue<FeedAd>(hentetAdEtterEndring.json)
-
-        assertEquals(emptyList(), førEndringJson.contactList)
-        assertEquals(emptyList(), etterEndringJson.contactList)
-        assertNull(hentetAdFørEndring.kilde)
-        assertNotNull(hentetAdEtterEndring.kilde)
-        assertEquals("Stillingsregistrering", hentetAdEtterEndring.kilde)
-        assertThat(hentetAdFørEndring).usingRecursiveComparison().ignoringFields("kilde").isEqualTo(hentetAdEtterEndring)
-        assertThat(førEndringJson).usingRecursiveComparison().isEqualTo(etterEndringJson)
+        assertNull(hentetAdFørEndring.employer.orgnr)
+        assertEquals("922422249", hentetAdEtterEndring.employer.orgnr)
+        assertThat(hentetAdFørEndring).usingRecursiveComparison().ignoringFields("employer.orgnr").isEqualTo(hentetAdEtterEndring)
     }
+
+    @Test
+    fun `OppdaterDetaljer holder annonse skjult når privacy ikke er SHOW_ALL`() {
+        val ad = objectMapper.readValue(javaClass.getResourceAsStream("/ad_dto.json"), AdDTO::class.java)
+            .copy(uuid = UUID.randomUUID().toString())
+        feedService.lagreNyStillingsAnnonse(ad)
+
+        feedService.lagreOppdaterteDetaljer(listOf(ad.copy(privacy = "INTERNAL_NOT_SHOWN")))
+        val hentetEtterEndring = feedRepository.hentFeedItem(UUID.fromString(ad.uuid), false)!!
+
+        assertEquals("", hentetEtterEndring.json)
+    }
+
 }
