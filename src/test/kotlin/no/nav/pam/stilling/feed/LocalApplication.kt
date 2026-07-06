@@ -13,7 +13,7 @@ import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import no.nav.pam.stilling.feed.config.TxTemplate
 import no.nav.pam.stilling.feed.dto.KonsumentDTO
 import no.nav.pam.stilling.feed.sikkerhet.SecurityConfig
-import org.testcontainers.kafka.ConfluentKafkaContainer
+import org.testcontainers.kafka.KafkaContainer
 import org.testcontainers.postgresql.PostgreSQLContainer
 import org.testcontainers.utility.DockerImageName
 import java.util.*
@@ -31,8 +31,8 @@ val lokalPostgres: PostgreSQLContainer =
         .withPassword("pwd")
         .apply { start() }
 
-val lokalKafka: ConfluentKafkaContainer =
-    ConfluentKafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.3.2")).apply { start() }
+val lokalKafka: KafkaContainer =
+    KafkaContainer(DockerImageName.parse("apache/kafka-native:3.8.0")).apply { start() }
 
 val dataSource = HikariConfig().apply {
     jdbcUrl = lokalPostgres.jdbcUrl
