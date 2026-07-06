@@ -88,7 +88,6 @@ class KafkaStillingDetaljerListener(
         LOG.info("KafkaStillingDetaljerListener - Mottar ${records.count()} records med stillingsannonser: {}", adIds.joinToString(", "))
 
         val ads = records.mapNotNull { it.value() }.map { objectMapper.readValue<AdDTO>(it) }
-        // feedService.lagreOppdaterteDetaljer(ads) TODO: Legg tilbake denne og fjern lagreKilde når gjennomkjøring er ferdig
-        feedService.lagreKilde(ads)
+        feedService.lagreOppdaterteDetaljer(ads)
     }
 }

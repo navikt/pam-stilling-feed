@@ -47,23 +47,6 @@ class FeedRepository(private val txTemplate: TxTemplate) {
                 }.executeUpdate()
         } ?: 0
 
-    fun oppdaterKildeForFeedItem(id: UUID, kilde: String) = txTemplate.doInTransaction { ctx ->
-        val connection = ctx.connection()
-        var updated = 0
-
-        updated += connection.prepareStatement("UPDATE feed_item SET kilde = ? WHERE id = ?").apply {
-            this.setString(1, kilde)
-            this.setObject(2, id)
-        }.executeUpdate()
-
-        updated += connection.prepareStatement("UPDATE feed_page_item SET kilde = ? WHERE feed_item_id = ?").apply {
-            this.setString(1, kilde)
-            this.setObject(2, id)
-        }.executeUpdate()
-
-        return@doInTransaction updated
-    } ?: 0
-
     fun hentFeedItem(id: UUID, skalIgnorereFinn: Boolean): FeedItem? {
         return txTemplate.doInTransactionNullable { ctx ->
             val ignorerFinnClause = if (skalIgnorereFinn) " and kilde != 'FINN'" else ""
