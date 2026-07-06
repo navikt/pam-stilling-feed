@@ -155,7 +155,6 @@ private fun mapCategories(ad: AdDTO): List<FeedCategory> {
 
     val cats = ad.categoryList
         .asSequence()
-        .filter { c -> c.categoryType != null && c.code != null }
         .mapNotNull { c ->
             FeedCategory(
                 categoryType = c.categoryType,
@@ -206,14 +205,14 @@ data class Feed(
     val home_page_url: String = "https://arbeidsplassen.nav.no",
     val feed_url: String = "https://arbeidsplassen.nav.no/stillinger-feed",
     val description: String = "Feed med stillinger fra arbeidsplassen.no - En av Norges største oversikter over utlyste stillinger",
-    @JsonInclude(JsonInclude.Include.ALWAYS)
+    @field:JsonInclude(JsonInclude.Include.ALWAYS)
     val next_url: String?,
     @JsonIgnore
     val lastModified: ZonedDateTime = ZonedDateTime.now(),
     @JsonIgnore
     val etag: String = "",
     val id: UUID = UUID.randomUUID(),
-    @JsonInclude(JsonInclude.Include.ALWAYS)
+    @field:JsonInclude(JsonInclude.Include.ALWAYS)
     val next_id: UUID? = null,
     val items: MutableList<FeedLine> = mutableListOf()
 ) {
@@ -235,7 +234,7 @@ data class FeedLine(
     val title: String,
     val content_text: String = "Stillingsannonse",
     val date_modified: ZonedDateTime?, // kanskje ikke lurt å ha med dette?
-    @JsonProperty("_feed_entry")
+    @field:JsonProperty("_feed_entry")
     val feed_entry: FeedEntry
 ) {
     companion object {
@@ -270,7 +269,7 @@ data class FeedEntry(
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class FeedEntryContent(
     val uuid: UUID,
-    @JsonProperty("ad_content")
+    @field:JsonProperty("ad_content")
     val json: FeedAd?,
     val sistEndret: ZonedDateTime,
     val status: String

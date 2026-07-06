@@ -44,7 +44,7 @@ class TokenController(private val securityConfig: SecurityConfig, private val to
         val konsument = objectMapper.readValue<KonsumentDTO>(ctx.body())
         val success = tokenService.lagreKonsument(konsument)
 
-        if (success != null && success > 0) {
+        if (success > 0) {
             LOG.info("New consumer created with ID ${konsument.id}")
             ctx.status(200)
             ctx.json(konsument)
@@ -116,8 +116,8 @@ class TokenController(private val securityConfig: SecurityConfig, private val to
     }
 
     private fun hentKonsumenter(ctx: Context) = try {
-        val spørring = ctx.queryParam("q")
-        if (spørring !== null) {
+        val spørring = ctx.queryParamMap()["q"]?.firstOrNull()
+        if (spørring != null) {
             val konsumenter = tokenService.hentKonsumenter(spørring)
             ctx.json(konsumenter)
         } else {

@@ -13,7 +13,7 @@ class DenylistRefreshTask(
 
     override fun run() {
         val nyDenylist = tokenRepository.hentInvaliderteTokens()
-        LOG.info("Refresher denylist - Antall invaliderte tokens: ${nyDenylist?.size}")
+        LOG.info("Refresher denylist - Antall invaliderte tokens: ${nyDenylist.size}")
         securityConfig.updateDenylist(nyDenylist)
     }
 }

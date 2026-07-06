@@ -28,7 +28,7 @@ class TokenService(private val tokenRepository: TokenRepository,
             } else {
                 return@doInTransaction eksisterende.first()
             }
-        } ?: throw IllegalArgumentException("Greide hverken å hente eller opprette konsument ${konsument.id}")
+        }
 
     fun finnKonsument(konsumentId: UUID) = tokenRepository.hentKonsument(konsumentId)
 
@@ -43,7 +43,7 @@ class TokenService(private val tokenRepository: TokenRepository,
     fun hentPublicToken() =
         txTemplate.doInTransactionNullable { ctx ->
             tokenRepository.hentKonsument(SecurityConfig.PUBLIC_TOKEN_ID).firstOrNull()?.let { k ->
-                tokenRepository.hentGyldigeTokens(k.id)?.firstOrNull()
+                tokenRepository.hentGyldigeTokens(k.id).firstOrNull()
             }
         }
 
@@ -95,5 +95,4 @@ class TokenService(private val tokenRepository: TokenRepository,
             return@doInTransaction jwtToken
         }
 }
-
 

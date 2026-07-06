@@ -38,7 +38,7 @@ class TokenRepository(private val txTemplate: TxTemplate) {
                 konsumenter.add(KonsumentDTO.fraDatabase(rs))
 
              return@doInTransaction konsumenter
-        } ?: emptyList()
+        }
 
     fun hentKonsument(id: UUID) =
         txTemplate.doInTransaction { ctx ->

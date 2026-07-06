@@ -45,7 +45,7 @@ class FeedRepository(private val txTemplate: TxTemplate) {
                     this.setString(1, oppdatertJson)
                     this.setObject(2, id)
                 }.executeUpdate()
-        } ?: 0
+        }
 
     fun hentFeedItem(id: UUID, skalIgnorereFinn: Boolean): FeedItem? {
         return txTemplate.doInTransactionNullable { ctx ->

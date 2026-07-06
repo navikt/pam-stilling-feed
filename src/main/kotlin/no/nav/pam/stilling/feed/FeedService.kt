@@ -124,7 +124,7 @@ class FeedService(
                 lagreNyStillingsAnnonse(ad)
             }.filterNotNull().toList()
             return@doInTransaction items
-        }!!
+        }
     }
 
     fun hentStillingsAnnonse(uuid: UUID): FeedItem? {

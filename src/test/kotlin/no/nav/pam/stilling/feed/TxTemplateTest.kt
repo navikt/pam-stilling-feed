@@ -77,5 +77,5 @@ class TxTemplateTest {
             ctx.connection()
                 .prepareStatement("SELECT * FROM feed_consumer").executeQuery()
                 .use { generateSequence { if (it.next()) KonsumentDTO.fraDatabase(it) else null }.toList() }
-        } ?: emptyList()
+        }
 }

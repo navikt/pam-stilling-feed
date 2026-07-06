@@ -54,17 +54,18 @@ fun getOpenApiPlugin() = OpenApiPlugin { openApiConfig ->
 }
 
 private fun setResponseHeadersDocumentation(content: ObjectNode) {
-    content["paths"].fields().forEachRemaining {
-        if (!listOf("/api/v1/feed", "/api/v1/feed/<feedPageId>").contains(it.key)) return@forEachRemaining
+    val pathsNode = content["paths"] as? ObjectNode ?: return
+    pathsNode.properties().forEach { (path, pathNode) ->
+        if (!listOf("/api/v1/feed", "/api/v1/feed/<feedPageId>").contains(path)) return@forEach
 
         try {
-            val okResponseNode = it.value["get"]["responses"]["200"] as ObjectNode
+            val okResponseNode = pathNode["get"]["responses"]["200"] as ObjectNode
             okResponseNode.putObject("headers").let { headersNode ->
                 headersNode.putObject("ETag").put("description", "Entity tag providing a ID for the resource version.").put("type", "UUID")
                 headersNode.putObject("Last-Modified").put("description", "Last modified datetime of resource.").put("type", "RFC 1123 formatted datetime")
             }
         } catch (e: Exception) {
-            return@forEachRemaining
+            return@forEach
         }
     }
 }
