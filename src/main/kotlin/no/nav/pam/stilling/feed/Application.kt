@@ -89,13 +89,11 @@ fun startApp(
         port = 8080,
         jsonMapper = JavalinJackson(objectMapper),
         meterRegistry = prometheusRegistry,
-        accessManager = accessManager
+        accessManager = accessManager,
+        naisController = naisController,
+        tokenController = tokenController,
+        feedController = feedController
     )
-
-    naisController.setupRoutes(javalin)
-    tokenController.setupRoutes(javalin)
-    feedController.setupRoutes(javalin)
-    javalin.after { _ -> MDC.remove(KONSUMENT_ID_MDC_KEY) }
 
     Timer("DenylistRefreshTimer").scheduleAtFixedRate(
         DenylistRefreshTask(securityConfig, tokenRepository),
@@ -130,7 +128,10 @@ fun startJavalin(
     port: Int = 8080,
     jsonMapper: JavalinJackson,
     meterRegistry: PrometheusMeterRegistry,
-    accessManager: JavalinAccessManager
+    accessManager: JavalinAccessManager,
+    naisController: NaisController,
+    tokenController: TokenController,
+    feedController: FeedController
 ): Javalin {
     val requestLogger = LoggerFactory.getLogger("access")
     val micrometerPlugin = MicrometerPlugin { micrometerConfig ->
@@ -144,19 +145,22 @@ fun startJavalin(
         it.registerPlugin(micrometerPlugin)
 
         it.registerPlugin(getOpenApiPlugin())
-        it.registerPlugin(SwaggerPlugin { swaggerConfiguration ->
-            swaggerConfiguration.roles = arrayOf(Rolle.UNPROTECTED)
-            swaggerConfiguration.documentationPath = "/api/openapi.json"
-        })
         it.registerPlugin(ReDocPlugin { reDocConfiguration ->
-            reDocConfiguration.roles = arrayOf(Rolle.UNPROTECTED)
-            reDocConfiguration.documentationPath = "/api/openapi.json"
+            reDocConfiguration.withRoles(Rolle.UNPROTECTED).withDocumentationPath("/api/openapi.json")
         })
-    }.beforeMatched {ctx ->
-        if(ctx.routeRoles().isEmpty()) {
-            return@beforeMatched
+        it.registerPlugin(SwaggerPlugin { swaggerConfiguration ->
+            swaggerConfiguration.withRoles(Rolle.UNPROTECTED).withDocumentationPath("/api/openapi.json")
+        })
+
+        naisController.setupRoutes(it.routes)
+        tokenController.setupRoutes(it.routes)
+        feedController.setupRoutes(it.routes)
+        it.routes.beforeMatched { ctx ->
+            if (ctx.routeRoles().isNotEmpty()) {
+                accessManager.manage(ctx, ctx.routeRoles())
+            }
         }
-        accessManager.manage(ctx, ctx.routeRoles())
+        it.routes.after { _ -> MDC.remove(KONSUMENT_ID_MDC_KEY) }
     }
         .start(port)
 }

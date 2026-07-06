@@ -1,8 +1,8 @@
 package no.nav.pam.stilling.feed
 
 import com.fasterxml.jackson.module.kotlin.readValue
-import io.javalin.Javalin
 import io.javalin.http.Context
+import io.javalin.router.JavalinDefaultRoutingApi
 import no.nav.pam.stilling.feed.dto.KonsumentDTO
 import no.nav.pam.stilling.feed.dto.TokenRequestDTO
 import no.nav.pam.stilling.feed.sikkerhet.Rolle
@@ -18,12 +18,12 @@ class TokenController(private val securityConfig: SecurityConfig, private val to
         private val LOG = LoggerFactory.getLogger(TokenController::class.java)
     }
 
-    fun setupRoutes(javalin: Javalin) {
-        javalin.get("/api/publicToken", { ctx -> publicToken(ctx) }, Rolle.UNPROTECTED)
-        javalin.get("/internal/api/tokenInfo", { ctx -> tokenInfo(ctx) }, Rolle.ADMIN)
-        javalin.post("/internal/api/newApiToken", { ctx -> nyttApiToken(ctx) }, Rolle.ADMIN)
-        javalin.post("/internal/api/newConsumer", { ctx -> nyKonsument(ctx) }, Rolle.ADMIN)
-        javalin.get("/internal/api/consumers", { ctx -> hentKonsumenter(ctx) }, Rolle.ADMIN)
+    fun setupRoutes(routes: JavalinDefaultRoutingApi) {
+        routes.get("/api/publicToken", { ctx -> publicToken(ctx) }, Rolle.UNPROTECTED)
+        routes.get("/internal/api/tokenInfo", { ctx -> tokenInfo(ctx) }, Rolle.ADMIN)
+        routes.post("/internal/api/newApiToken", { ctx -> nyttApiToken(ctx) }, Rolle.ADMIN)
+        routes.post("/internal/api/newConsumer", { ctx -> nyKonsument(ctx) }, Rolle.ADMIN)
+        routes.get("/internal/api/consumers", { ctx -> hentKonsumenter(ctx) }, Rolle.ADMIN)
     }
 
     private fun publicToken(ctx: Context) {

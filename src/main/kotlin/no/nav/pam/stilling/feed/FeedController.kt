@@ -1,11 +1,11 @@
 package no.nav.pam.stilling.feed
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import io.javalin.Javalin
 import io.javalin.http.ContentType
 import io.javalin.http.Context
 import io.javalin.http.HttpStatus
 import io.javalin.openapi.*
+import io.javalin.router.JavalinDefaultRoutingApi
 import no.nav.pam.stilling.feed.dto.Feed
 import no.nav.pam.stilling.feed.dto.FeedEntryContent
 import no.nav.pam.stilling.feed.sikkerhet.Rolle
@@ -24,18 +24,18 @@ class FeedController(private val feedService: FeedService, private val objectMap
 
     private fun hentKonsumentId() = MDC.get(KONSUMENT_ID_MDC_KEY)
 
-    fun setupRoutes(javalin: Javalin) {
-        javalin.get(
+    fun setupRoutes(routes: JavalinDefaultRoutingApi) {
+        routes.get(
             "/api/v1/feed/{feed_page_id}",
             { ctx -> hentFeed(ctx, ctx.pathParam("feed_page_id")) },
             Rolle.KONSUMENT
         )
-        javalin.get(
+        routes.get(
             "/api/v1/feed",
             { ctx -> hentFeed(ctx) },
             Rolle.KONSUMENT
         )
-        javalin.get(
+        routes.get(
             "/api/v1/feedentry/{entry_id}",
             { ctx -> hentFeedItem(ctx, ctx.pathParam("entry_id")) },
             Rolle.KONSUMENT
