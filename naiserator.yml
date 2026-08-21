@@ -20,10 +20,10 @@ spec:
     cpuThresholdPercentage: 50
   resources:
     limits:
-      memory: 1Gi
+      memory: 2Gi
     requests:
       cpu: 200m
-      memory: 700Mi
+      memory: 1200Mi
   leaderElection: true
   prometheus:
     enabled: true
