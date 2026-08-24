@@ -42,7 +42,7 @@ java {
 val javalinVersion = "7.2.3"
 val micrometerVersion = "1.17.0"
 val flywayVersion = "13.3.0"
-val jacksonVersion = "2.22.1"
+val jacksonVersion = "2.22.2"
 val kafkaVersion = "4.3.1"
 val lz4Version = "1.11.1"
 dependencies {
@@ -55,7 +55,7 @@ dependencies {
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
 
-    implementation("ch.qos.logback:logback-classic:1.6.2")
+    implementation("ch.qos.logback:logback-classic:1.6.3")
     implementation("net.logstash.logback:logstash-logback-encoder:9.0")
     implementation("com.auth0:java-jwt:4.6.0")
     implementation("org.flywaydb:flyway-database-postgresql:$flywayVersion")
@@ -80,5 +80,5 @@ dependencies {
     testImplementation("org.testcontainers:testcontainers-postgresql")
     testImplementation("org.testcontainers:testcontainers-junit-jupiter")
     testImplementation("io.mockk:mockk:1.14.11")
-    testImplementation("net.bytebuddy:byte-buddy:1.18.11") // Må overstyre mockk sin bytebuddy for å støtte moderne java
+    testImplementation("net.bytebuddy:byte-buddy:1.18.12") // Må overstyre mockk sin bytebuddy for å støtte moderne java
 }
