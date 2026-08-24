@@ -29,6 +29,9 @@ spec:
     enabled: true
     path: /internal/prometheus
   observability:
+    autoInstrumentation:
+      enabled: true
+      runtime: java
     logging:
       destinations:
         - id: loki
