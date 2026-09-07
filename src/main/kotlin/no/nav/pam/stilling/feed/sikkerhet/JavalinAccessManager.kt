@@ -49,7 +49,7 @@ class JavalinAccessManager(private val securityConfig: SecurityConfig, env: Map<
         return erAdmin && parsetToken.erGyldig
     } ?: false
 
-    private fun validerKonsument(ctx: Context) = getBearerToken(ctx)?.let {
+    private fun validerKonsument(ctx: Context): Boolean = getBearerToken(ctx)?.let {
         val parsetToken = validerToken(it, ctx)
         return parsetToken.decodedJWT != null && parsetToken.erGyldig
     } ?: false
