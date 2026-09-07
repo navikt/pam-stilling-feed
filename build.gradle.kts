@@ -40,8 +40,8 @@ java {
 }
 
 val javalinVersion = "7.2.3"
-val micrometerVersion = "1.17.0"
-val flywayVersion = "13.3.0"
+val micrometerVersion = "1.17.1"
+val flywayVersion = "13.4.0"
 val jacksonVersion = "2.22.2"
 val kafkaVersion = "4.3.1"
 val lz4Version = "1.11.1"
