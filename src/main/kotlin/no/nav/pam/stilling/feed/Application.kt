@@ -18,6 +18,8 @@ import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics
 import io.micrometer.core.instrument.binder.system.ProcessorMetrics
 import io.micrometer.core.instrument.binder.system.UptimeMetrics
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
+import io.opentelemetry.instrumentation.api.semconv.http.HttpServerRoute
+import io.opentelemetry.instrumentation.api.semconv.http.HttpServerRouteSource
 import net.logstash.logback.argument.StructuredArguments.kv
 import no.nav.pam.stilling.feed.config.DatabaseConfig
 import no.nav.pam.stilling.feed.config.KafkaConfig
@@ -158,6 +160,13 @@ fun startJavalin(
         it.routes.beforeMatched { ctx ->
             if (ctx.routeRoles().isNotEmpty()) {
                 accessManager.manage(ctx, ctx.routeRoles())
+            }
+            ctx.endpoints().matchedHttpEndpoint()?.let { endepunkt ->
+                HttpServerRoute.update(
+                    io.opentelemetry.context.Context.current(),
+                    HttpServerRouteSource.NESTED_CONTROLLER,
+                    endepunkt.path
+                )
             }
         }
         it.routes.after { _ -> MDC.remove(KONSUMENT_ID_MDC_KEY) }
