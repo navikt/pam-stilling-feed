@@ -1,6 +1,6 @@
 plugins {
-    kotlin("jvm") version "2.4.10"
-    kotlin("kapt") version "2.4.10"
+    kotlin("jvm") version "2.4.20"
+    kotlin("kapt") version "2.4.20"
     application
 }
 
@@ -41,7 +41,7 @@ java {
 
 val javalinVersion = "7.2.3"
 val micrometerVersion = "1.17.1"
-val flywayVersion = "13.5.0"
+val flywayVersion = "13.6.0"
 val jacksonVersion = "2.22.2"
 val kafkaVersion = "4.3.1"
 val lz4Version = "1.11.1"
@@ -58,7 +58,7 @@ dependencies {
 
     implementation("ch.qos.logback:logback-classic:1.6.3")
     implementation("net.logstash.logback:logstash-logback-encoder:9.0")
-    implementation("com.auth0:java-jwt:4.6.0")
+    implementation("com.auth0:java-jwt:4.6.1")
     implementation("org.flywaydb:flyway-database-postgresql:$flywayVersion")
     implementation("org.postgresql:postgresql:42.7.13")
     implementation("com.zaxxer:HikariCP:7.1.0")
