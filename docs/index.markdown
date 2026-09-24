@@ -68,6 +68,8 @@ Authorization: Bearer <your secret key>
      you will need to implement this on your side, once an ad is marked as inactive you will need to remove it from your service as stated in the [terms of use](https://arbeidsplassen.nav.no/vilkar-api).
 3. Can I filter on ads containing a specific employer/company/municipality/keyword?
    - If you want to filter on specific criteria, you will need to implement this on your side. If you want to fetch ads after a given date, you can use the `If-Modified-Since` header.
+4. Historical job data from arbeidsplassen.no. 
+   - If you need to access historical job data from [arbeidsplassen.no](https://arbeidsplassen.no), please read the information on how to proceed here: [data og forskning på Nav](https://www.nav.no/no/nav-og-samfunn/kunnskap/data-og-forskning-pa-nav)
 
 ## Using the feed
 
