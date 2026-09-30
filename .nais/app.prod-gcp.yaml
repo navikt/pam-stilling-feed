@@ -1,0 +1,11 @@
+spec:
+  replicas:
+    max: 4
+  ingresses:
+    - https://pam-stilling-feed.intern.nav.no/
+    - https://pam-stilling-feed.nav.no/
+  kafka:
+    pool: nav-prod
+  env:
+    - name: STILLING_URL_BASE
+      value: https://arbeidsplassen.nav.no/stillinger/stilling
