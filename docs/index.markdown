@@ -70,6 +70,8 @@ Authorization: Bearer <your secret key>
    - If you want to filter on specific criteria, you will need to implement this on your side. If you want to fetch ads after a given date, you can use the `If-Modified-Since` header.
 4. Historical job data from arbeidsplassen.no. 
    - If you need to access historical job data from [arbeidsplassen.no](https://arbeidsplassen.no), please read the information on how to proceed here: [data og forskning på Nav](https://www.nav.no/no/nav-og-samfunn/kunnskap/data-og-forskning-pa-nav)
+5. Ads in an Excel table
+    - Be aware that when you export ads to an Excel table, the inactive ads will appear first. You’ll need to scroll further in the table to see the active listings.
 
 ## Using the feed
 
