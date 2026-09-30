@@ -1,12 +1,11 @@
-apiVersion: "nais.io/v1alpha1"
-kind: "Application"
+apiVersion: nais.io/v1alpha1
+kind: Application
 metadata:
   name: pam-stilling-feed
   namespace: teampam
   labels:
     team: teampam
 spec:
-  image: {{ image }}
   port: 8080
   liveness:
     path: /internal/isAlive
@@ -15,8 +14,7 @@ spec:
     path: /internal/isReady
     initialDelay: 40
   replicas:
-    min: {{ min_replicas }}
-    max: {{ max_replicas }}
+    min: 2
     cpuThresholdPercentage: 50
   resources:
     limits:
@@ -36,10 +34,6 @@ spec:
       destinations:
         - id: loki
         - id: elastic
-  ingresses:
-  {{#each ingress as |url|}}
-     - {{url}}
-  {{/each}}
   gcp:
     sqlInstances:
       - name: pam-stilling-feed
@@ -53,8 +47,6 @@ spec:
           - name: pamstillingfeed
             envVarPrefix: DB
         cascadingDelete: false
-  kafka:
-    pool: {{kafka_pool}}
   accessPolicy:
     inbound:
       rules:
@@ -66,11 +58,9 @@ spec:
       value: teampam.stilling-intern-1
     - name: STILLING_INTERN_GROUP_ID
       value: StillingFeed3
-    - name: STILLING_URL_BASE
-      value: "{{ stilling_url_base }}"
     - name: TILGANGSSTYRING_ENABLED
-      value: "{{ tilgangsstyring_enabled }}"
+      value: "true"
     - name: REKJOR_DETALJER_ENABLED
-      value: "{{ rekjor_detaljer_enabled }}"
+      value: "false"
     - name: REKJOR_DETALJER_GROUP_ID
-      value: "{{ rekjor_detaljer_group_id }}"
+      value: pam-stilling-feed-rekjor-2
