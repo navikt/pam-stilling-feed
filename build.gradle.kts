@@ -41,8 +41,8 @@ java {
 
 val javalinVersion = "7.2.3"
 val micrometerVersion = "1.17.1"
-val flywayVersion = "13.6.0"
-val jacksonVersion = "2.22.2"
+val flywayVersion = "13.7.0"
+val jacksonVersion = "2.22.3"
 val kafkaVersion = "4.3.1"
 val lz4Version = "1.11.1"
 dependencies {
@@ -81,5 +81,5 @@ dependencies {
     testImplementation("org.testcontainers:testcontainers-postgresql")
     testImplementation("org.testcontainers:testcontainers-junit-jupiter")
     testImplementation("io.mockk:mockk:1.14.11")
-    testImplementation("net.bytebuddy:byte-buddy:1.18.13") // Må overstyre mockk sin bytebuddy for å støtte moderne java
+    testImplementation("net.bytebuddy:byte-buddy:1.18.14") // Må overstyre mockk sin bytebuddy for å støtte moderne java
 }
