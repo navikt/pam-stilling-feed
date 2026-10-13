@@ -42,7 +42,7 @@ spec:
         highAvailability: true
         diskSize: 50
         diskAutoresize: true
-        tier: db-custom-2-7680
+        tier: db-custom-4-7680
         databases:
           - name: pamstillingfeed
             envVarPrefix: DB
