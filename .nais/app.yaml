@@ -34,19 +34,6 @@ spec:
       destinations:
         - id: loki
         - id: elastic
-  gcp:
-    sqlInstances:
-      - name: pam-stilling-feed
-        type: POSTGRES_18
-        diskType: SSD
-        highAvailability: true
-        diskSize: 50
-        diskAutoresize: true
-        tier: db-custom-4-7680
-        databases:
-          - name: pamstillingfeed
-            envVarPrefix: DB
-        cascadingDelete: false
   accessPolicy:
     inbound:
       rules:

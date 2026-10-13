@@ -4,6 +4,19 @@ spec:
   ingresses:
     - https://pam-stilling-feed.intern.dev.nav.no/
     - https://pam-stilling-feed.ekstern.dev.nav.no
+  gcp:
+    sqlInstances:
+      - name: pam-stilling-feed
+        type: POSTGRES_18
+        diskType: SSD
+        highAvailability: true
+        diskSize: 50
+        diskAutoresize: true
+        tier: db-custom-1-5120
+        databases:
+          - name: pamstillingfeed
+            envVarPrefix: DB
+        cascadingDelete: false
   kafka:
     pool: nav-dev
   env:
