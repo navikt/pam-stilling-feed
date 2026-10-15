@@ -41,7 +41,7 @@ java {
 
 val javalinVersion = "7.2.3"
 val micrometerVersion = "1.17.1"
-val flywayVersion = "13.8.0"
+val flywayVersion = "13.9.0"
 val jacksonVersion = "2.22.3"
 val kafkaVersion = "4.3.1"
 val lz4Version = "1.11.1"
@@ -51,12 +51,12 @@ dependencies {
     implementation("io.javalin:javalin")
     implementation("io.javalin:javalin-micrometer")
     implementation("io.micrometer:micrometer-registry-prometheus:$micrometerVersion")
-    implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-api:2.31.1")
+    implementation("io.opentelemetry.instrumentation:opentelemetry-instrumentation-api:2.32.0")
 
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
 
-    implementation("ch.qos.logback:logback-classic:1.6.4")
+    implementation("ch.qos.logback:logback-classic:1.6.5")
     implementation("net.logstash.logback:logstash-logback-encoder:9.0")
     implementation("com.auth0:java-jwt:4.6.1")
     implementation("org.flywaydb:flyway-database-postgresql:$flywayVersion")
