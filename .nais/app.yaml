@@ -12,7 +12,7 @@ spec:
     initialDelay: 40
   readiness:
     path: /internal/isReady
-    initialDelay: 940
+    initialDelay: 40
   replicas:
     min: 2
     cpuThresholdPercentage: 50
