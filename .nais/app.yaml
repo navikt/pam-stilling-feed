@@ -7,12 +7,17 @@ metadata:
     team: teampam
 spec:
   port: 8080
+  startup:
+    path: /internal/isAlive
+    initialDelay: 0
+    periodSeconds: 1
+    failureThreshold: 60
   liveness:
     path: /internal/isAlive
-    initialDelay: 40
+    initialDelay: 0
   readiness:
     path: /internal/isReady
-    initialDelay: 40
+    initialDelay: 0
   replicas:
     min: 2
     cpuThresholdPercentage: 50
