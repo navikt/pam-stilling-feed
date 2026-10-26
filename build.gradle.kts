@@ -41,9 +41,9 @@ java {
 
 val javalinVersion = "7.2.3"
 val micrometerVersion = "1.17.1"
-val flywayVersion = "13.10.0"
-val jacksonVersion = "2.22.3"
-val kafkaVersion = "4.3.1"
+val flywayVersion = "13.10.3"
+val jacksonVersion = "2.22.4"
+val kafkaVersion = "4.3.2"
 val lz4Version = "1.11.1"
 dependencies {
     implementation(kotlin("stdlib"))
@@ -58,7 +58,7 @@ dependencies {
 
     implementation("ch.qos.logback:logback-classic:1.6.5")
     implementation("net.logstash.logback:logstash-logback-encoder:9.0")
-    implementation("com.auth0:java-jwt:4.6.1")
+    implementation("com.auth0:java-jwt:4.6.2")
     implementation("org.flywaydb:flyway-database-postgresql:$flywayVersion")
     implementation("org.postgresql:postgresql:42.7.14")
     implementation("com.zaxxer:HikariCP:7.1.0")
@@ -81,5 +81,5 @@ dependencies {
     testImplementation("org.testcontainers:testcontainers-postgresql")
     testImplementation("org.testcontainers:testcontainers-junit-jupiter")
     testImplementation("io.mockk:mockk:1.14.11")
-    testImplementation("net.bytebuddy:byte-buddy:1.18.14") // Må overstyre mockk sin bytebuddy for å støtte moderne java
+    testImplementation("net.bytebuddy:byte-buddy:1.18.15") // Må overstyre mockk sin bytebuddy for å støtte moderne java
 }
