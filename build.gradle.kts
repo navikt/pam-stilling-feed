@@ -81,5 +81,4 @@ dependencies {
     testImplementation("org.testcontainers:testcontainers-postgresql")
     testImplementation("org.testcontainers:testcontainers-junit-jupiter")
     testImplementation("io.mockk:mockk:1.14.11")
-    testImplementation("net.bytebuddy:byte-buddy:1.18.15") // Må overstyre mockk sin bytebuddy for å støtte moderne java
 }
