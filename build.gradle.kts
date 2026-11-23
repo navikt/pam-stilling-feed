@@ -41,7 +41,7 @@ java {
 
 val javalinVersion = "7.2.4"
 val micrometerVersion = "1.17.2"
-val flywayVersion = "13.12.1"
+val flywayVersion = "13.12.2"
 val jacksonVersion = "2.23.0"
 val kafkaVersion = "4.4.0"
 val lz4Version = "1.11.1"
@@ -56,7 +56,7 @@ dependencies {
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
 
-    implementation("ch.qos.logback:logback-classic:1.6.6")
+    implementation("ch.qos.logback:logback-classic:1.6.7")
     implementation("net.logstash.logback:logstash-logback-encoder:9.0")
     implementation("com.auth0:java-jwt:4.6.2")
     implementation("org.flywaydb:flyway-database-postgresql:$flywayVersion")
